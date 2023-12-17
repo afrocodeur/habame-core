@@ -21,17 +21,26 @@ const Habame = (function(){
         Services: {},
         /**
          * @param {HTMLElement} htmlNodeElement
+         *
          * @returns {App}
          */
         createRoot: function(htmlNodeElement) {
             return new App(htmlNodeElement, Habame);
         },
+        /**
+         * @param {string} name
+         * @param {Function} viewEngine
+         */
         setDefaultViewEngine: function(name, viewEngine) {
             if(viewEngine) {
                 this.addViewEngine(name, viewEngine);
             }
             $defaultViewEngine = name;
         },
+        /**
+         * @param {string} name
+         * @param {Function} viewEngine
+         */
         addViewEngine: function(name, viewEngine) {
             if($viewEngines[name] !== undefined ) {
                 return;
@@ -56,6 +65,7 @@ const Habame = (function(){
          * @param {Function} controller
          * @param {string|Array|Object} view
          * @param {{ engines: string|string[], disableXmlEngine: boolean }} options
+         *
          * @returns {ComponentFactory}
          */
         createComponent: function(name, controller, view, options = {}) {
@@ -83,6 +93,7 @@ const Habame = (function(){
         },
         /**
          * @param {string} name
+         *
          * @returns {ComponentFactory}
          */
         getComponentFactory: function(name) {
@@ -95,6 +106,7 @@ const Habame = (function(){
         /**
          * @param {string} name
          * @param {Function} directive
+         *
          * @returns {DirectiveFactory}
          */
         createDirective: function(name, directive) {
@@ -104,6 +116,7 @@ const Habame = (function(){
         },
         /**
          * @param {string} name
+         *
          * @returns {DirectiveFactory}
          */
         getDirectiveFactory: function(name) {

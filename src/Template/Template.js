@@ -47,8 +47,8 @@ const Template = function($template, $viewProps, $isWithTry = false, $catchValue
     };
 
     /**
-     *
      * @param {Function} listener
+     *
      * @returns {Function}
      */
     this.onUpdate = function(listener) {
@@ -69,8 +69,8 @@ const Template = function($template, $viewProps, $isWithTry = false, $catchValue
     };
 
     /**
-     *
      * @param {?Object.<string, *>} valuesToUse
+     *
      * @returns {*}
      */
     this.value = function(valuesToUse) {

@@ -49,6 +49,7 @@ const State = function($defaultValues = {}) {
     /**
      * @param {string} stateName
      * @param {*} stateValue
+     *
      * @returns {StateItem}
      */
     this.add = function(stateName, stateValue) {
@@ -120,6 +121,11 @@ const State = function($defaultValues = {}) {
         }
     };
 
+    /**
+     * @param {Object} serviceInstance
+     * @param {State} serviceInstance.$serviceState
+     * @param {string[] }only
+     */
     this.useService = function(serviceInstance, only = []) {
         const serviceState = serviceInstance.$serviceState;
         if(!serviceState || !(serviceState instanceof State)) {
@@ -158,7 +164,6 @@ const State = function($defaultValues = {}) {
     };
 
     /**
-     *
      * @param {string[]} names
      */
     this.trigger = function(names) {
@@ -234,6 +239,7 @@ const State = function($defaultValues = {}) {
      * @param {string[]} names
      * @param {Function} listener
      * @param {boolean} isToHandleFirst
+     *
      * @returns {Function}
      */
     this.onUpdate = function(names, listener, isToHandleFirst = false) {

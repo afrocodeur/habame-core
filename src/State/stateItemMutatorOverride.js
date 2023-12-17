@@ -22,7 +22,6 @@ const stateItemMutatorOverride = function($value, $stateItem) {
         mutators = $value.MUTATORS || mutators;
     }
 
-
     mutators.forEach((methodName) => {
         const nativeMethod = $value[methodName];
         $value[methodName] = function() {

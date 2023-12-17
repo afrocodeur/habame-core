@@ -20,6 +20,7 @@ const ComponentFactory = function($name, $controller, $viewDescription, $options
 
     /**
      * @param {App} appInstance
+     *
      * @returns {View}
      */
     const getNewView = function(appInstance) {

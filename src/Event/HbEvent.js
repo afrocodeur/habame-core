@@ -23,6 +23,11 @@ const HbEvent = function () {
         });
     };
 
+    /**
+     * @param {string} name
+     *
+     * @returns {{emit: Function}}
+     */
     this.create = function(name) {
         const eventBridge = {
             emit: function() {
@@ -51,6 +56,7 @@ const HbEvent = function () {
      *
      * @param {string} name
      * @param {Function} listener
+     *
      * @returns {?Function}
      */
     this.addEventListener = function(name, listener) {

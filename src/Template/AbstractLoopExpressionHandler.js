@@ -7,14 +7,12 @@
  */
 const AbstractLoopExpressionHandler = function($regex, $regexWithParenthesis) {
 
-    /**
-     *
-     * @type {{iterableName: ?string, itemKeyName: ?string, iterable: ?string, itemValueName: ?string}}
-     */
+    /** @type {{iterableName: ?string, itemKeyName: ?string, iterable: ?string, itemValueName: ?string}} */
     const $loopExpressionDescription = { iterableName: null, iterable: null, itemValueName: null, itemKeyName: null };
 
     /**
      * @param {string} template
+     *
      * @returns {boolean}
      */
     this.test = function(template) {
@@ -26,6 +24,7 @@ const AbstractLoopExpressionHandler = function($regex, $regexWithParenthesis) {
      * @param {string} template
      * @param {Number} iterableIndex
      * @param {Number}iterableItemsIndex
+     *
      * @returns {?{iterableName: string, itemKeyName: string, iterable: string, itemValueName: string}}
      */
     this.getExpressionDetails = function(template, iterableIndex, iterableItemsIndex) {
@@ -47,7 +46,9 @@ const AbstractLoopExpressionHandler = function($regex, $regexWithParenthesis) {
         return $loopExpressionDescription;
     };
 
-    /** @returns {string} */
+    /**
+     * @returns {string}
+     */
     this.getIterableFullName = function() {
         return $loopExpressionDescription.iterable;
     };
@@ -56,12 +57,16 @@ const AbstractLoopExpressionHandler = function($regex, $regexWithParenthesis) {
         return $loopExpressionDescription.iterableName;
     };
 
-    /** @returns {string} */
+    /**
+     * @returns {string}
+     */
     this.getIterableItemKeyName = function() {
         return $loopExpressionDescription.itemKeyName;
     };
 
-    /** @returns {string} */
+    /**
+     * @returns {string}
+     */
     this.getIterableItemValueName = function() {
         return $loopExpressionDescription.itemValueName;
     };

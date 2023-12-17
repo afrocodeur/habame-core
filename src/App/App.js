@@ -15,6 +15,7 @@ const App = function(htmlNodeElement) {
     /**
      * @param {ComponentFactory} componentFactory
      * @param {ComponentProps} props
+     *
      * @returns {Component}
      */
     const createComponentInstance = (componentFactory, props) => {
@@ -35,6 +36,7 @@ const App = function(htmlNodeElement) {
     /**
      * @param {string} name
      * @param {?ComponentProps} props
+     *
      * @returns {Component}
      */
     this.createComponentByName = function(name, props) {
@@ -53,6 +55,7 @@ const App = function(htmlNodeElement) {
 
     /**
      * @param {ComponentFactory|string} componentFactory
+     *
      * @returns {Component}
      */
     this.render = function(componentFactory) {

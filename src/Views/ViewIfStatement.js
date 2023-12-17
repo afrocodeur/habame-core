@@ -22,6 +22,7 @@ const ViewIfStatement = function($ifStatement, $viewProps) {
 
     /**
      * @param {Function} callback
+     *
      * @returns {Function}
      */
     this.watch = function(callback) {

@@ -28,7 +28,9 @@ const LoopTemplateDescription = function($loopExpression, $viewProps) {
     // Todo : get source data
     // Get the iteration values (key|index, value)
 
-    /** @returns {*} */
+    /**
+     * @returns {*}
+     */
     this.getIterable = function() {
         return $iterableTemplate.value();
     };
@@ -38,8 +40,8 @@ const LoopTemplateDescription = function($loopExpression, $viewProps) {
     };
 
     /**
-     *
      * @param {Function} listener
+     *
      * @returns {Function}
      */
     this.onUpdate = function(listener) {

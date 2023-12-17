@@ -111,7 +111,6 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
     };
 
     /**
-     *
      * @param {HTMLElement|DocumentFragment} parentNode
      * @param {ViewIfStatement} ifStatement
      */

@@ -39,7 +39,6 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
     };
 
     /**
-     *
      * @param {HTMLElement|DocumentFragment} parentNode
      */
     this.render = function(parentNode) {

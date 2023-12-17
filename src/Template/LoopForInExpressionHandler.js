@@ -16,8 +16,8 @@ const LoopForInExpressionHandler = function() {
     AbstractLoopExpressionHandler.apply(this, [$regex, $regexWithParenthesis]);
 
     /**
-     *
      * @param {string} template
+     *
      * @returns {?{iterableName: string, itemKeyName: string, iterable: string, itemValueName: string}}
      */
     this.setExpression = function(template) {

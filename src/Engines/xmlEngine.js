@@ -5,6 +5,7 @@ const FRAGMENT_ACCEPTED_NAMES = ['fragment', 'habame'];
 
 /**
  * @param {string|Document} viewTemplate
+ *
  * @returns {Object|string|Array}
  */
 const xmlEngine = function(viewTemplate) {

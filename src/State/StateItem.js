@@ -62,6 +62,7 @@ const StateItem = function($defaultValue, $parentState) {
 
     /**
      * @param {Function} listener
+     *
      * @returns {Function}
      */
     this.onUpdate = function(listener) {
