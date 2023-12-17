@@ -4,7 +4,7 @@ import AbstractView from "src/Views/AbstractView";
 /**
  * @param {string} $viewDescription
  * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
- *
+
  * @class
  * @extends AbstractView
  */

@@ -5,8 +5,8 @@ import Component from 'src/Component/Component';
  *
  * @param {string} $name
  * @param {Function} $controller
- * @param {{ engines: string[], disableXmlEngine: boolean }} $options
  * @param {string|Array|Object} $viewDescription
+ * @param {{ engines: string[], disableXmlEngine: boolean }} $options
  *
  * @class
  */
@@ -19,7 +19,7 @@ const ComponentFactory = function($name, $controller, $viewDescription, $options
     let $viewFactory = null;
 
     /**
-     * @param appInstance
+     * @param {App} appInstance
      * @returns {View}
      */
     const getNewView = function(appInstance) {
@@ -31,10 +31,9 @@ const ComponentFactory = function($name, $controller, $viewDescription, $options
     };
 
     /**
-     *
-     * @param {Component} parent
      * @param {ComponentProps} props
      * @param {App} appInstance
+     *
      * @returns {Component}
      */
     this.create = function(props, appInstance) {

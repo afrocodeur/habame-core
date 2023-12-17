@@ -4,7 +4,8 @@ import Template from "src/Template/Template";
  *
  * @param {string} $ifStatement
  * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
- * @constructor
+ *
+ *  @class
  */
 const ViewIfStatement = function($ifStatement, $viewProps) {
 

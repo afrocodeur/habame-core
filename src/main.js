@@ -1,7 +1,7 @@
 import App from 'src/App/App';
 import ComponentFactory from "src/Component/ComponentFactory";
 import DirectiveFactory from "src/Directive/DirectiveFactory";
-import ServiceWrapper from "./Service/ServiceWrapper";
+import ServiceWrapper from "src/Service/ServiceWrapper";
 
 const Habame = (function(){
 
@@ -44,6 +44,8 @@ const Habame = (function(){
             $viewEngines[name] = viewEngine;
         },
         /**
+         * @param {string} name
+         *
          * @returns {?Function}
          */
         getViewEngine: function(name) {
@@ -75,6 +77,9 @@ const Habame = (function(){
                     return serviceWrapper.create();
                 }
             })
+        },
+        getServices: function() {
+            return $services;
         },
         /**
          * @param {string} name

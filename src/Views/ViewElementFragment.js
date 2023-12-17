@@ -135,6 +135,8 @@ const cleanConditionStatement = function(statementTemplate) {
 /**
  * @param {string[]} previousConditions
  * @param {string} currentIf
+ *
+ * @returns {string}
  */
 const transformElseIf = function(previousConditions, currentIf) {
     const notStatementsCleaned = previousConditions.map(cleanConditionStatement);

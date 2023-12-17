@@ -3,7 +3,7 @@
  * @param {RegExp} $regex
  * @param {RegExp} $regexWithParenthesis
  *
- * @classs
+ * @class
  */
 const AbstractLoopExpressionHandler = function($regex, $regexWithParenthesis) {
 

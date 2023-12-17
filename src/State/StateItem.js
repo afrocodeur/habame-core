@@ -30,9 +30,10 @@ const StateItem = function($defaultValue, $parentState) {
     };
 
     /**
-     *
      * @param {*} value
      * @param {boolean} shouldTriggerListeners
+     *
+     * @returns {boolean}
      */
     this.set = function(value, shouldTriggerListeners = true) {
         if(value === $stateValue.current) {

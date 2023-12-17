@@ -4,7 +4,7 @@ import getSafeNode from "../Component/getSafeNode";
 
 /**
  *
- * @param  {string|Array|Object} $viewDescription
+ * @param  {string|Array|object} $viewDescription
  * @param {App} $appInstance
  *
  *

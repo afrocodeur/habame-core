@@ -2,9 +2,10 @@ import ViewIfStatement from "src/Views/ViewIfStatement";
 
 /**
  *
- * @param {string|Array|Object} $viewDescription
- * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
- * @param {boolean} $isFragment
+ * @param {Object} arg
+ * @param {string|Array|Object} arg.$viewDescription
+ * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} arg.$viewProps
+ * @param {boolean} arg.$isFragment
  *
  * @class
  */

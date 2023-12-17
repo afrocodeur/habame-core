@@ -1,7 +1,8 @@
 /**
  *
  * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
- * @constructor
+ *
+ * @class
  */
 const AbstractTemplate = function($viewProps) {
 

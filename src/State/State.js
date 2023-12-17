@@ -17,7 +17,7 @@ const State = function($defaultValues = {}) {
      *  @type {Function} $listeners[].listener - the function to handle if one of names match
      *  @type {Object[]} $listeners
      *
-     *  */
+     */
     const $listeners = [];
     const $triggerListenersOptions = {
         enable: true,
@@ -94,8 +94,8 @@ const State = function($defaultValues = {}) {
     };
 
     /**
-     * Add multiple state
-     * s
+     * Add multiple states
+     *
      * @param {Object.<string, *>} values
      */
     this.init = function(values) {
@@ -167,6 +167,8 @@ const State = function($defaultValues = {}) {
 
     /**
      * @param {string} name
+     *
+     * @returns {boolean}
      */
     this.exists = function(name) {
         return $stateItems[name] !== undefined;
@@ -176,6 +178,7 @@ const State = function($defaultValues = {}) {
      * get State which has a state with the name
      *
      * @param {string} name
+     *
      * @returns {?State}
      */
     this.getStateWith = function(name) {
@@ -187,7 +190,8 @@ const State = function($defaultValues = {}) {
 
     /**
      * @param {string[]} names
-     * @returns {}
+     *
+     * @returns {Object.<string, *>}
      */
     this.getValues = function(names) {
         const values = {};
@@ -200,6 +204,7 @@ const State = function($defaultValues = {}) {
 
     /**
      * @param {string} name
+     *
      * @returns {StateItem}
      */
     this.get = function(name) {

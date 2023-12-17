@@ -15,7 +15,7 @@ const App = function(htmlNodeElement) {
     /**
      * @param {ComponentFactory} componentFactory
      * @param {ComponentProps} props
-     * @returns Component
+     * @returns {Component}
      */
     const createComponentInstance = (componentFactory, props) => {
         return componentFactory.create(props, this);
@@ -24,6 +24,8 @@ const App = function(htmlNodeElement) {
     /**
      * @param {string} name
      * @param {Array} params
+     *
+     * @returns {*}
      */
     this.createDirectiveInstance = function(name, params) {
         const directiveFactory = window.Habame.getDirectiveFactory(name);
@@ -33,7 +35,7 @@ const App = function(htmlNodeElement) {
     /**
      * @param {string} name
      * @param {?ComponentProps} props
-     * @returns Component
+     * @returns {Component}
      */
     this.createComponentByName = function(name, props) {
         const componentFactory = window.Habame.getComponentFactory(name);
@@ -51,7 +53,7 @@ const App = function(htmlNodeElement) {
 
     /**
      * @param {ComponentFactory|string} componentFactory
-     * @returns Component
+     * @returns {Component}
      */
     this.render = function(componentFactory) {
         const instance = (typeof componentFactory === 'string')

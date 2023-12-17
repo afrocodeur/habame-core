@@ -68,27 +68,39 @@ const Component = function($name, $view, $controller, $props, $appInstance) {
         $lifecycleHandler.removed();
     };
 
-    /** @returns {StateItem} */
+    /**
+     * @param {string} name
+     *
+     * @returns {StateItem}
+     */
     this.getStateByName = function(name) {
         return $state.get(name);
     };
 
-    /** @returns {State} */
+    /**
+     * @returns {State}
+     */
     this.getState = function() {
         return $state;
     };
 
-    /** @returns {string} */
+    /**
+     * @returns {string}
+     */
     this.getName = function() {
         return $name;
     };
 
-    /** @returns {Object.<string, Function>} **/
+    /**
+     * @returns {Object.<string, Function>}
+     */
     this.getActions = function() {
         return { ...$actions };
     };
 
-    /** @returns {HbEvent} */
+    /**
+     * @returns {HbEvent}
+     */
     this.getHbEvent = function() {
         return $event;
     };
