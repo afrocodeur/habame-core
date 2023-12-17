@@ -32,7 +32,7 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
 
     AbstractView.call(this, { $viewDescription, $viewProps });
 
-    const $viewAnchor = document.createComment($viewDescription.name + ' Anchor ' + ($viewDescription.if ? ': If (' + $viewDescription.if + ')' : ''));
+    const $viewAnchor = document.createComment(($viewDescription.name || 'DocumentFragment') + ' Anchor ' + ($viewDescription.if ? ': If (' + $viewDescription.if + ')' : ''));
 
     /** @type {Object.<string, ViewHtmlElementAttribute>} */
     const $htmlAttributes = {};
@@ -125,6 +125,9 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
     this.unmountProcess = function() {
         $lifeCycleHandler.beforeUnmount();
         this.moveIntoFragment($htmlNode);
+        if($htmlNode instanceof DocumentFragment) {
+            $children.unmount();
+        }
         this.setIsUnmounted();
         $lifeCycleHandler.unmounted();
     };
@@ -145,6 +148,10 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
             return;
         }
         this.moveIntoParent();
+        if($htmlNode instanceof DocumentFragment) {
+            $children.mountProcess();
+            this.insertAfter($htmlNode, $viewAnchor);
+        }
         this.setIsMounted();
         $lifeCycleHandler.mounted();
     };

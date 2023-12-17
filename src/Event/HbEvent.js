@@ -26,7 +26,7 @@ const HbEvent = function () {
     /**
      * @param {string} name
      *
-     * @returns {{emit: Function}}
+     * @returns {?{emit: Function}}
      */
     this.create = function(name) {
         const eventBridge = {
@@ -35,7 +35,7 @@ const HbEvent = function () {
             }
         };
         if(this[name] !== undefined) {
-            return;
+            return null;
         }
         Object.defineProperty(this, name, {
             get() {
