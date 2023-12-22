@@ -75,7 +75,7 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
             return;
         }
         this.mountProcess($ifStatement);
-    }
+    };
 
     this.unmount = function() {
         if($viewState.isUnmount) {
@@ -85,7 +85,7 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
             return;
         }
         this.unmountProcess();
-    }
+    };
 
     this.remove = function() {
         if($viewState.isRemoved) {
@@ -95,7 +95,7 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
             return;
         }
         this.removeProcess();
-    }
+    };
 
     this.setIsRendered = function() {
         $viewState.isRendered = true;

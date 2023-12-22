@@ -91,19 +91,19 @@ const Template = function($template, $viewProps, $isWithTry = false, $catchValue
 
     (function () { /* Constructor */
         try {
-            let returnCode = 'return '+$template+';';
+            let returnCode = 'return '+ $template +';';
 
             if($isWithTry) {
-                returnCode = ' try { ' + returnCode + ' } catch(e) { return ' + $catchValue + '; }'
+                returnCode = ' try { '+ returnCode +' } catch(e) { return '+ $catchValue +'; }';
             }
 
             $templateFunction = new Function(
                 'states',
-                (requestedVariablesNames.length ? 'const {' + requestedVariablesNames.join(',') + '} = states;' : '') +
+                (requestedVariablesNames.length ? 'const {'+ requestedVariablesNames.join(',') +'} = states;' : '') +
                 returnCode
             );
         } catch (e) {
-            throw new Error('Syntax error : ' + $template);
+            throw new Error('Syntax error : '+ $template);
         }
 
         if(!requestedVariablesNames.length) {

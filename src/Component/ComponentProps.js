@@ -1,10 +1,11 @@
 /**
  *
  * @param {Object.<string, Template>} $propTemplates
+ * @param {Object.<string, Function>} $slots
  *
  * @class
  */
-const ComponentProps = function($propTemplates = {}) {
+const ComponentProps = function($propTemplates = {}, $slots) {
 
     const updatePropsValues = () => {
         for (const propName in $propTemplates) {
@@ -35,6 +36,15 @@ const ComponentProps = function($propTemplates = {}) {
             props[propName] = $propTemplates[propName].value();
         }
         return props;
+    };
+
+    /**
+     * @param {string} name
+     *
+     * @returns {?Function}
+     */
+    this.getSlot = function(name) {
+        return $slots ? $slots[name] : null;
     };
 
     ((() => { /* constructor */

@@ -106,6 +106,15 @@ const Component = function($name, $view, $controller, $props, $appInstance) {
     };
 
     /**
+     * @param {string} name
+     *
+     * @returns {?Function}
+     */
+    this.getSlot = function(name) {
+        return $props.getSlot(name);
+    };
+
+    /**
      * @returns {Object.<string, Function>}
      */
     this.getPublicMethod = function() {

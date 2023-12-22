@@ -48,7 +48,7 @@ const ViewLoopFragment = function($viewDescription, $viewProps) {
         // TODO : create this own state or update it
         const stateData = { [$itemValueName]: iterable[index] };
         if($itemKeyName) {
-            stateData[$itemKeyName] = index
+            stateData[$itemKeyName] = index;
         }
         const nodeKey = $keyTemplate.value(stateData);
         $nodeInstancesByKey.current.push(nodeKey);
@@ -66,7 +66,7 @@ const ViewLoopFragment = function($viewDescription, $viewProps) {
             node,
             localState
         };
-    }
+    };
     const updateIteration = function() {
         const iterable = $loopTemplate.getIterable();
         if($viewDescriptionWithoutRepeat.ref) {
@@ -156,7 +156,7 @@ const ViewLoopFragment = function($viewDescription, $viewProps) {
             }
             const nextElement = $viewAnchor.nextSibling;
             if(!nextElement) {
-                $viewAnchor.parentNode.appendChild(this.unMountedFragment())
+                $viewAnchor.parentNode.appendChild(this.unMountedFragment());
             }
             $viewAnchor.parentNode.insertBefore(this.unMountedFragment(), $viewAnchor);
         }

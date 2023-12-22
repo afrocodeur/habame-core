@@ -2,10 +2,10 @@ import TextTemplateDescription from "src/Template/TextTemplateDescription";
 
 const ATTR_MAPPERS =  {
     style: (value) => {
-        return Object.keys(value).map((name) => name + ': ' + value[name] + ';').join(' ')
+        return Object.keys(value).map((name) => name + ': ' + value[name] + ';').join(' ');
     },
     class: (value) => {
-        return Object.keys(value).filter((name) => value[name]).join(' ')
+        return Object.keys(value).filter((name) => value[name]).join(' ');
     }
 };
 
@@ -35,6 +35,9 @@ const ViewHtmlElementAttribute =  function($htmlNode, $attrName, $attrValue, $vi
         }
         if($directAttributesChange.indexOf($attrName) >= 0) {
             $htmlNode[$attrName] = value;
+            return;
+        }
+        if(typeof $htmlNode.setAttribute !== 'function') {
             return;
         }
         $htmlNode.setAttribute($attrName, value);
@@ -82,7 +85,7 @@ const ViewHtmlElementAttribute =  function($htmlNode, $attrName, $attrValue, $vi
         updateNodeAttribute(this.value());
         $viewProps.componentInstance.getState().onUpdate($templateDescription.statesToWatch(), () => {
             const value = this.value();
-            updateNodeAttribute(value)
+            updateNodeAttribute(value);
             trigger('onUpdate', [value]);
         });
     })());

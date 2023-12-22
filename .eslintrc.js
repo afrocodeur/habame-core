@@ -25,7 +25,8 @@ module.exports = {
         "no-empty-function": "error",
         "no-eval": "error",
         "no-var": "error",
-        "no-useless-rename": "error"
+        "no-useless-rename": "error",
+        "semi": 2
     },
     settings: {
         jsdoc: {

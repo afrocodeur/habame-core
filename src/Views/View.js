@@ -88,8 +88,8 @@ const View = function($viewDescription, $appInstance) {
             }
             return componentInstance.getStateByName.apply($viewProps.componentInstance, [name]);
         };
-        $componentInstance = componentInstance
-        $viewAnchor.textContent = componentInstance.getName() + ' Component View Anchor';
+        $componentInstance = componentInstance;
+        $viewAnchor.textContent = componentInstance.getName() +' Component View Anchor';
     };
 
     /**

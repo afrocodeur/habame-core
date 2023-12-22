@@ -6,7 +6,7 @@ import ServiceWrapper from "src/Service/ServiceWrapper";
 const Habame = (function(){
 
     /** @type {Object.<string, ComponentFactory>} */
-    const $components = {}
+    const $components = {};
 
     /** @type {Object.<string, DirectiveFactory>} */
     const $directives = {};
@@ -86,7 +86,7 @@ const Habame = (function(){
                 get() {
                     return serviceWrapper.create();
                 }
-            })
+            });
         },
         getServices: function() {
             return $services;
@@ -126,7 +126,7 @@ const Habame = (function(){
             }
             return factory;
         }
-    }
+    };
 }());
 
 export default Habame;

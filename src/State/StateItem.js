@@ -25,7 +25,7 @@ const StateItem = function($defaultValue, $parentState) {
             return;
         }
         $listeners.forEach((listener) => {
-            listener.apply(listener, [$stateValue.current, $stateValue.last])
+            listener.apply(listener, [$stateValue.current, $stateValue.last]);
         });
     };
 

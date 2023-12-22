@@ -1,7 +1,8 @@
 import AbstractView from "src/Views/AbstractView";
 import Template from "src/Template/Template";
 import ComponentProps from "src/Component/ComponentProps";
-import ActionTemplate from "../Template/ActionTemplate";
+import ActionTemplate from "src/Template/ActionTemplate";
+import ViewElementFragment from "src/Views/ViewElementFragment";
 
 /**
  *
@@ -30,10 +31,38 @@ const ViewComponentElement = function($viewDescription, $viewProps) {
                 props[propName] = new Template($viewDescription.props[propName], $viewProps);
             }
         }
-        $componentProps = new ComponentProps(props);
-
+        $componentProps = new ComponentProps(props, getSlots());
         $componentElement = $viewProps.appInstance.createComponentByName($viewDescription.component, $componentProps);
         buildEventListenerWithParent();
+    };
+
+    const getSlotBuilder = function(viewDescription) {
+        return function(container, callback) {
+            const localState = callback(viewDescription.props);
+            const customProps = { ...$viewProps };
+            if(localState) {
+                localState.parent = $viewProps.localState || $viewProps.componentInstance.getState();
+                customProps.localState = localState;
+            }
+            const node = new ViewElementFragment(viewDescription, customProps);
+            node.render(container);
+            return node;
+        };
+    };
+
+    const getSlots = function() {
+        const slots = { };
+        if($viewDescription.content) {
+            slots.default = getSlotBuilder($viewDescription.content);
+        }
+        if(!$viewDescription.slots) {
+            return slots;
+        }
+
+        for(const name in $viewDescription.slots) {
+            slots[name] = getSlotBuilder($viewDescription.slots[name]);
+        }
+        return slots;
     };
 
     const buildEventListenerWithParent = () => {

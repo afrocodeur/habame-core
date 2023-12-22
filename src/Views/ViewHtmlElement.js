@@ -6,13 +6,7 @@ import LifecycleHandler from "src/Component/LifecycleHandler";
 import Directive from "src/Directive/Directive";
 import State from "src/State/State";
 import ActionTemplate from "src/Template/ActionTemplate";
-
-
-const EVENT_DIRECTIVE = {
-    PREVENT_DEFAULT: 'prevent',
-    STOP_PROPAGATION: 'stop'
-};
-
+import { DEFAULT_SLOT_NAME, SLOT_RENDER_TAG_NAME, EVENT_DIRECTIVE } from "src/constantes";
 /**
  *
  * @param {Array|Object} $viewDescription
@@ -25,7 +19,7 @@ const EVENT_DIRECTIVE = {
 const ViewHtmlElement = function($viewDescription, $viewProps) {
     if($viewDescription.if) {
         const localState = new State();
-        localState.parent = $viewProps.localState || $viewProps.componentInstance.getState()
+        localState.parent = $viewProps.localState || $viewProps.componentInstance.getState();
         localState.if = $viewDescription.if;
         $viewProps = { ...$viewProps, localState };
     }
@@ -51,6 +45,15 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
     let $children = null;
 
     const build = function() {
+        if($viewDescription.name === SLOT_RENDER_TAG_NAME) {
+            const slot = $viewProps.componentInstance.getSlot($viewDescription.slot || DEFAULT_SLOT_NAME);
+            $htmlNode = document.createDocumentFragment();
+            if(!slot) {
+                throw new Error('Undefined Slot name '+ $viewDescription.slot);
+            }
+            $children = slot($htmlNode, getSlotLocalState);
+            return;
+        }
         $htmlNode = ($viewDescription.name) ? document.createElement($viewDescription.name) : document.createDocumentFragment();
         buildAttrs();
         if($viewDescription.content) {
@@ -59,15 +62,46 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
         if($viewDescription.directives) {
             $htmlNodeDirective = new Directive($htmlNode, $viewDescription.directives, $htmlAttributes, $viewProps, $lifecycleListeners);
         }
-        buildEventsConnexion()
+        buildEventsConnexion();
     };
 
-    const buildAttrs = function() {
+    /**
+     * @param {?string[]} slotProps
+     *
+     * @returns {?State}
+     */
+    const getSlotLocalState = function(slotProps) {
+        if(!slotProps) {
+            return null;
+        }
+        buildAttrs(false);
+        const localState = new State();
+        for(const attrName in $htmlAttributes) {
+            if(!slotProps.includes(attrName)) {
+                continue;
+            }
+            const attributeStateItem = localState.add(attrName, $htmlAttributes[attrName].value());
+            $htmlAttributes[attrName].onUpdate((value) => {
+                attributeStateItem.set(value);
+            });
+        }
+
+        return localState;
+    };
+    /**
+     * @param {boolean} isUpdateAttribute
+     */
+    const buildAttrs = function(isUpdateAttribute = true) {
         if(!$viewDescription.attrs) {
             return;
         }
         for(const attrName in $viewDescription.attrs) {
-            $htmlAttributes[attrName] = (new ViewHtmlElementAttribute($htmlNode, attrName, $viewDescription.attrs[attrName], $viewProps));
+            $htmlAttributes[attrName] = (new ViewHtmlElementAttribute(
+                $htmlNode,
+                isUpdateAttribute ? attrName : '',
+                $viewDescription.attrs[attrName],
+                $viewProps
+            ));
         }
     };
 

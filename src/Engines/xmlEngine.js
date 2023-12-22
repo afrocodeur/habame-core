@@ -1,3 +1,4 @@
+import {DEFAULT_SLOT_NAME, SLOT_DEFINITION_TAG_NAME, SLOT_RENDER_TAG_NAME} from "../constantes";
 
 
 const STRUCT_CONTROL_AND_LOOP_ATTRIBUTES = ['ref', 'if', 'else', 'elseif', 'repeat'];
@@ -11,7 +12,7 @@ const FRAGMENT_ACCEPTED_NAMES = ['fragment', 'habame'];
 const xmlEngine = function(viewTemplate) {
 
     const view = [];
-    let parsedDocument = viewTemplate
+    let parsedDocument = viewTemplate;
     if(!(viewTemplate instanceof Document)) {
         const parser = new DOMParser();
         parsedDocument = parser.parseFromString(`<habame>${viewTemplate}</habame>`, 'application/xhtml+xml');
@@ -50,7 +51,7 @@ const xmlNodeAttributeDescriptions =  function(nodeElement) {
         const attributeType = attributePath.shift();
         const attributeSubName = attributePath.join('.');
         if(!attributes[attributeType]) {
-            attributes[attributeType] = {}
+            attributes[attributeType] = {};
         }
         attributes[attributeType][attributeSubName] = attributeValue;
     });
@@ -72,10 +73,27 @@ const xmlNodeToJson =  function(nodeElement) {
 
     if(nodeElement.children && nodeElement.children.length > 0) {
         const elementChildren = [];
+        const slots = [];
         Array.from(nodeElement.childNodes).forEach((nodeChild) => {
-            elementChildren.push(xmlNodeToJson(nodeChild));
+            const child = xmlNodeToJson(nodeChild);
+            if(child.name === SLOT_DEFINITION_TAG_NAME) {
+                if(!child.attrs.name) {
+                    throw new Error('Slot name is required');
+                }
+                if(child.props) {
+                    child.props = Object.keys(child.props);
+                }
+                child.name = '';
+                slots[child.attrs.name] = child;
+                return;
+            }
+            if(child.name === SLOT_RENDER_TAG_NAME) {
+                child.slot = (child.attrs && child.attrs.name) || DEFAULT_SLOT_NAME;
+            }
+            elementChildren.push(child);
         });
         element.content = (elementChildren.length === 1) ? elementChildren[0] : elementChildren;
+        element.slots = slots;
     }
     else if(nodeElement.textContent) {
         element.content = nodeElement.textContent;
