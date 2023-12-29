@@ -121,7 +121,12 @@ const State = function($defaultValues = {}) {
                 continue;
             }
             const stateItem = this.add(propName, propsValues[propName]);
-            props.onUpdate(propName, (value) => stateItem.set(value));
+            props.onUpdate(propName, (value, oldValue) => {
+                stateItem.set(value);
+                if(value === oldValue) {
+                    stateItem.trigger();
+                }
+            });
         }
     };
 
@@ -142,7 +147,12 @@ const State = function($defaultValues = {}) {
             }
             const sourceState = serviceState.get(stateName);
             const stateItem = this.add(stateName, sourceState.value());
-            sourceState.onUpdate((value) => stateItem.set(value));
+            sourceState.onUpdate((value, oldValue) => {
+                stateItem.set(value);
+                if(value === oldValue) {
+                    stateItem.trigger();
+                }
+            });
         }
     };
 
