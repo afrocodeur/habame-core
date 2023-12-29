@@ -5,7 +5,7 @@
  *
  * @class
  */
-const ComponentProps = function($propTemplates = {}, $slots) {
+const ComponentProps = function($propTemplates = {}, $slots = {}) {
 
     const updatePropsValues = () => {
         for (const propName in $propTemplates) {

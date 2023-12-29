@@ -10,7 +10,7 @@ const ARRAY_OVERRIDABLE_METHODS = [
 ];
 
 const stateItemMutatorOverride = function($value, $stateItem) {
-    if(typeof $value !== 'object') {
+    if(!$value || typeof $value !== 'object') {
         return;
     }
     let mutators = [];

@@ -35,7 +35,7 @@ const Component = function($name, $view, $controller, $props, $appInstance) {
     $state.parent = $appInstance.getState();
     $state.App = $appInstance.getState();
 
-    const $publicFunctions = $controller({ Actions: $actions, HbEvent: $event, State: $state, Props: $props,  Lifecycle: $lifecycle, Ref: $refs });
+    const $publicFunctions = $controller({ App: $appInstance, Actions: $actions, HbEvent: $event, State: $state, Props: $props,  Lifecycle: $lifecycle, Ref: $refs });
 
     this.render = function(parentNode) {
         $lifecycleHandler.beforeCreate();

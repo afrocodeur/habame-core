@@ -1,6 +1,7 @@
 import HbEvent from "src/Event/HbEvent";
 import State from "src/State/State";
 import ComponentProps from "src/Component/ComponentProps";
+import ComponentFactory from "src/Component/ComponentFactory";
 
 /**
  * @param {HTMLElement} htmlNodeElement
@@ -34,13 +35,13 @@ const App = function(htmlNodeElement) {
     };
 
     /**
-     * @param {string} name
+     * @param {ComponentFactory|string} source
      * @param {?ComponentProps} props
      *
      * @returns {Component}
      */
-    this.createComponentByName = function(name, props) {
-        const componentFactory = window.Habame.getComponentFactory(name);
+    this.createComponentByName = function(source, props) {
+        const componentFactory = (source instanceof ComponentFactory) ? source : window.Habame.getComponentFactory(source);
         props = props || new ComponentProps();
         return createComponentInstance(componentFactory, props);
     };

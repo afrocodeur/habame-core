@@ -25,7 +25,7 @@ const Habame = (function(){
          * @returns {App}
          */
         createRoot: function(htmlNodeElement) {
-            return new App(htmlNodeElement, Habame);
+            return new App(htmlNodeElement);
         },
         /**
          * @param {string} name
@@ -77,10 +77,10 @@ const Habame = (function(){
         /**
          * @param {string} name
          * @param {Function} service
-         * @param {boolean} isUniqueInstance
+         * @param {{ isUniqueInstance?: boolean, params: *[] }} options
          */
-        createService: function(name, service, isUniqueInstance = true){
-            const serviceWrapper = new ServiceWrapper(service, isUniqueInstance);
+        createService: function(name, service, options ){
+            const serviceWrapper = new ServiceWrapper(service, options);
             $services[name] = serviceWrapper;
             Object.defineProperty(Habame.Services, name, {
                 get() {

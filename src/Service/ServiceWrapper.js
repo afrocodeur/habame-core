@@ -1,17 +1,25 @@
 import State from "../State/State";
 
-const ServiceWrapper = function($service, isUniqueInstance) {
+/**
+ *
+ * @param {Function} $service
+ * @param {{ isUniqueInstance: boolean, params: *[] }} $options
+ *
+ * @class
+ */
+const ServiceWrapper = function($service, $options) {
     let $uniqueInstance = null;
 
     const getNewInstance = function() {
         const serviceState = new State();
-        const instance = new $service(serviceState);
+        const otherArgs = Array.isArray($options.params) ? $options.params : [];
+        const instance = new $service(serviceState, ...otherArgs);
         instance.$serviceState = serviceState;
         return instance;
     };
 
     this.create = function() {
-        if(!isUniqueInstance) {
+        if($options.isUniqueInstance === false) {
             return getNewInstance();
         }
         if(!$uniqueInstance) {

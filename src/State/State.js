@@ -109,13 +109,17 @@ const State = function($defaultValues = {}) {
      * Connect the component state to its props
      *
      * @param {ComponentProps} props
+     * @param {?string[]} only
      */
-    this.useProps = function(props) {
+    this.useProps = function(props, only) {
         if(!(props instanceof ComponentProps)) {
             throw new Error('State.useProps require a ComponentProps instance');
         }
         const propsValues = props.all();
         for (const propName in propsValues) {
+            if(Array.isArray(only) && !only.includes(propName)) {
+                continue;
+            }
             const stateItem = this.add(propName, propsValues[propName]);
             props.onUpdate(propName, (value) => stateItem.set(value));
         }
