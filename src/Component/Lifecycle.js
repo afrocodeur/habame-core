@@ -106,6 +106,12 @@ const Lifecycle =  function($listeners) {
         return this;
     };
 
+    this.clearAll = function() {
+        for(const key in $listeners) {
+            $listeners[key].slice();
+        }
+    };
+
 };
 
 /**

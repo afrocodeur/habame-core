@@ -35,7 +35,9 @@ const Component = function($name, $view, $controller, $props, $appInstance) {
     $state.parent = $appInstance.getState();
     $state.App = $appInstance.getState();
 
-    const $publicFunctions = $controller({ App: $appInstance, Actions: $actions, HbEvent: $event, State: $state, Props: $props,  Lifecycle: $lifecycle, Ref: $refs });
+    const $componentRequirements = { App: $appInstance, Actions: $actions, HbEvent: $event, State: $state, Props: $props,  Lifecycle: $lifecycle, Ref: $refs };
+
+    const $publicFunctions = $controller($componentRequirements);
 
     this.render = function(parentNode) {
         $lifecycleHandler.beforeCreate();
@@ -95,7 +97,7 @@ const Component = function($name, $view, $controller, $props, $appInstance) {
      * @returns {Object.<string, Function>}
      */
     this.getActions = function() {
-        return { ...$actions };
+        return $actions;
     };
 
     /**
@@ -119,6 +121,21 @@ const Component = function($name, $view, $controller, $props, $appInstance) {
      */
     this.getPublicMethod = function() {
         return !$publicFunctions ? {} : { ...$publicFunctions };
+    };
+
+    this.updateController = function(controller) {
+        const stateValues = $state.getAll();
+        $lifecycle.clearAll();
+        $event.clearAll();
+        for(const key in $refs) {
+            $refs[key] = undefined;
+        }
+        controller($componentRequirements);
+        for(const oldStateName in stateValues) {
+            if($state.exists(oldStateName)) {
+                $state.set({[oldStateName]: stateValues[oldStateName]});
+            }
+        }
     };
 
     ((() => { /* constructor */

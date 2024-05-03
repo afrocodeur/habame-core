@@ -84,6 +84,12 @@ const HbEvent = function () {
         listeners.splice(listenerIndex, 1);
     };
 
+    this.clearAll = function() {
+        for(const key in $listeners) {
+            $listeners[key].splice();
+        }
+    };
+
 };
 
 export default HbEvent;

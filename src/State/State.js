@@ -68,6 +68,7 @@ const State = function($defaultValues = {}) {
         }
 
         Object.defineProperty(this, stateName, {
+            configurable: true,
             get () {
                 return stateItem.value();
             },
@@ -219,6 +220,13 @@ const State = function($defaultValues = {}) {
             values[name] = stateItem.value();
         });
         return values;
+    };
+
+    /**
+     * @return {Object.<string, *>}
+     */
+    this.getAll = function() {
+        return this.getValues(this.getStateNames());
     };
 
     /**
