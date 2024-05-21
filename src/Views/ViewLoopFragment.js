@@ -36,7 +36,7 @@ const ViewLoopFragment = function($viewDescription, $viewProps) {
     let $isBuild = false;
 
     const build = () => {
-        $isBuild = false;
+        $isBuild = true;
         this.insertAfter($viewAnchorEnd, $viewAnchor);
         updateIteration();
         $loopTemplate.onUpdate(() => {
@@ -56,6 +56,7 @@ const ViewLoopFragment = function($viewDescription, $viewProps) {
         if($nodeInstancesByKey.store[nodeKey]) {
             const existingNode = $nodeInstancesByKey.store[nodeKey];
             existingNode.localState.set(stateData);
+            existingNode.node.restoreRef();
             return;
         }
 
@@ -70,7 +71,7 @@ const ViewLoopFragment = function($viewDescription, $viewProps) {
     const updateIteration = function() {
         const iterable = $loopTemplate.getIterable();
         if($viewDescriptionWithoutRepeat.ref) {
-            $viewProps.view.cleanReference($viewDescription.ref);
+            $viewProps.view.cleanReference($viewDescription.ref, true);
         }
 
         const iterableIsArray = Array.isArray(iterable);
@@ -139,7 +140,7 @@ const ViewLoopFragment = function($viewDescription, $viewProps) {
         for (const nodeKey of $nodeInstancesByKey.current) {
             $nodeInstancesByKey.store[nodeKey].node.unmount();
         }
-        this.moveIntoFragment($viewAnchorEnd);
+        // this.moveIntoFragment($viewAnchorEnd);
         this.setIsUnmounted();
     };
 
@@ -154,11 +155,14 @@ const ViewLoopFragment = function($viewDescription, $viewProps) {
             for (const nodeKey of $nodeInstancesByKey.current) {
                 $nodeInstancesByKey.store[nodeKey].node.mount();
             }
-            const nextElement = $viewAnchor.nextSibling;
-            if(!nextElement) {
-                $viewAnchor.parentNode.appendChild(this.unMountedFragment());
-            }
-            $viewAnchor.parentNode.insertBefore(this.unMountedFragment(), $viewAnchor);
+            // const nextElement = $viewAnchor.nextSibling;
+            // if(!nextElement) {
+                // $viewAnchor.parentNode.appendChild(this.unMountedFragment());
+            // }
+            // else {
+            //     console.log('no next element')
+                // $viewAnchor.parentNode.insertBefore(this.unMountedFragment(), nextElement);
+            // }
         }
         else {
             build();

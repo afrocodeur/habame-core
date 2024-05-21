@@ -40,8 +40,11 @@ const AbstractLoopExpressionHandler = function($regex, $regexWithParenthesis) {
         $loopExpressionDescription.iterable = iterable;
 
         const itemParts = parts[iterableItemsIndex + 1].split(',').map((item) => item.trim());
-        $loopExpressionDescription.itemValueName = itemParts[0];
-        $loopExpressionDescription.itemKeyName = itemParts[1] || 'index';
+        if(itemParts.length === 1) {
+            itemParts.unshift('index');
+        }
+        $loopExpressionDescription.itemValueName = itemParts[1];
+        $loopExpressionDescription.itemKeyName = itemParts[0] || 'index';
 
         return $loopExpressionDescription;
     };

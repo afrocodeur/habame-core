@@ -1,6 +1,7 @@
 import ViewElementFragment from "src/Views/ViewElementFragment";
 import AbstractView from "src/Views/AbstractView";
 import getSafeNode from "../Component/getSafeNode";
+import ViewRefCollection from "./ViewRefCollection";
 
 /**
  *
@@ -26,7 +27,7 @@ const View = function($viewDescription, $appInstance) {
 
     const $viewFragment = new ViewElementFragment($viewDescription, $viewProps);
 
-    /** @type {Object.<string, (Object.<string, Function>)|[Object.<string, Function>]>} */
+    /** @type {Object.<string, (Object.<string, Function>)|ViewRefCollection>} */
     const $references = {};
 
     /** @type  {?Component} */
@@ -42,8 +43,6 @@ const View = function($viewDescription, $appInstance) {
             return;
         }
         $viewFragment.render(parentNode);
-        // Todo: onMounted
-        // Todo : Push mounted event for every component (only components)
     };
 
     this.unmountProcess = function () {
@@ -98,20 +97,25 @@ const View = function($viewDescription, $appInstance) {
      */
     this.setReference = function(name, viewElement) {
         const refInstance = getSafeNode(viewElement);
-        if(!$references[name]) {
-            $references[name] = refInstance;
+        if($references[name] instanceof ViewRefCollection) {
+            $references[name].push(refInstance);
             return;
         }
-        if(!Array.isArray($references[name])) {
-            $references[name] = [$references[name], refInstance];
-            return;
-        }
-        $references[name].push(refInstance);
+        $references[name] = refInstance;
     };
     /**
      * @param {string} name
+     * @param {boolean} isCollection
      */
-    this.cleanReference = function(name) {
+    this.cleanReference = function(name, isCollection) {
+        if(isCollection === true) {
+            if($references[name] instanceof ViewRefCollection) {
+                $references[name].clean();
+                return;
+            }
+            $references[name] = new ViewRefCollection();
+            return;
+        }
         $references[name] = undefined;
     };
 
@@ -121,6 +125,10 @@ const View = function($viewDescription, $appInstance) {
 
     this.getComponentInstance = function() {
         return $componentInstance;
+    };
+
+    this.updateViewDescription = function(viewDescription) {
+        $viewFragment.updateViewDescription(viewDescription);
     };
 
 };

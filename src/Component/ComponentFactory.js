@@ -13,7 +13,7 @@ import view from "../Views/View";
  */
 const ComponentFactory = function($name, $controller, $viewDescription, $options) {
 
-    /** @type {Component[]} */
+    /** @type {{component: Component, view: View }[]} */
     const $instances = [];
 
     const $sources = {
@@ -47,7 +47,7 @@ const ComponentFactory = function($name, $controller, $viewDescription, $options
     this.create = function(props, appInstance) {
         const view = getNewView(appInstance);
         const componentInstance = new Component($name, view, $sources.controller, props, appInstance);
-        $instances.push(componentInstance);
+        $instances.push({ component: componentInstance, view });
         return componentInstance;
     };
 
@@ -56,8 +56,8 @@ const ComponentFactory = function($name, $controller, $viewDescription, $options
      */
     this.updateController = function(controller) {
         $sources.controller = controller;
-        $instances.forEach((instance) => {
-            instance.updateController(controller);
+        $instances.forEach(({ component }) => {
+            component.updateController(controller);
         });
     };
 
@@ -66,6 +66,10 @@ const ComponentFactory = function($name, $controller, $viewDescription, $options
      */
     this.updateView = function(viewDescription) {
         $sources.view = viewDescription;
+        const viewDescriptionTransformed = $viewFactory.updateViewDescription(viewDescription);
+        $instances.forEach(({ view }) => {
+            view.updateViewDescription(viewDescriptionTransformed);
+        });
     };
 
     /**

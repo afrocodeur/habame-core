@@ -3,6 +3,7 @@ import ViewComponentElement from "src/Views/ViewComponentElement";
 import ViewHtmlElement from "src/Views/ViewHtmlElement";
 import ViewLoopFragment from "src/Views/ViewLoopFragment";
 import AbstractView from "src/Views/AbstractView";
+import ViewElementFragmentDev from "./Dev/ViewElementFragmentDev";
 
 /**
  *
@@ -20,38 +21,88 @@ const ViewElementFragment = function($viewDescription, $viewProps) {
      * @type {(ViewTextElement | ViewLoopFragment | ViewElementFragment | ViewComponentElement | ViewHtmlElement)[]}
      */
     const $fragmentElements = [];
+    let $nodeToReference = null;
+    let $parentNode = null;
 
-    const buildFromArray = function() {
-        const ifStatements = [];
-        for(const element of $viewDescription) {
-            if(typeof element === 'string') {
-                const node = new ViewElementFragment(element, $viewProps);
-                $fragmentElements.push(node);
-                continue;
-            }
 
-            const viewDescriptionItem = { ...element };
-            if(element.if) {
-                ifStatements.push(element.if);
-            }
-            else if(element.else === '') {
-                if (ifStatements.length === 0) {
-                    throw new Error('Else without If');
-                }
-                viewDescriptionItem.if = transformElseIf(ifStatements);
-            }
-            else if(element.elseif) {
-                if(ifStatements.length === 0) {
-                    throw new Error('ElseIf without If');
-                }
-                viewDescriptionItem.if = transformElseIf(ifStatements, element.elseif);
-                ifStatements.push(element.elseif);
-            }
-            else {
-                ifStatements.splice(0);
-            }
-            const node = new ViewElementFragment(viewDescriptionItem, $viewProps);
+    /**
+     * @param {string|Array|Object} element
+     * @param {string[]} ifStatements
+     */
+    const handleViewDescriptionElement = function(element, ifStatements) {
+        if(typeof element === 'string') {
+            const node = new ViewElementFragment(element, $viewProps);
             $fragmentElements.push(node);
+            return node;
+        }
+
+        const viewDescriptionItem = { ...element };
+        if(element.if) {
+            ifStatements.push(element.if);
+        }
+        else if(element.else === '') {
+            if (ifStatements.length === 0) {
+                throw new Error('Else without If');
+            }
+            viewDescriptionItem.if = transformElseIf(ifStatements);
+        }
+        else if(element.elseif) {
+            if(ifStatements.length === 0) {
+                throw new Error('ElseIf without If');
+            }
+            viewDescriptionItem.if = transformElseIf(ifStatements, element.elseif);
+            ifStatements.push(element.elseif);
+        }
+        else {
+            ifStatements.splice(0);
+        }
+        const node = new ViewElementFragment(viewDescriptionItem, $viewProps);
+        $fragmentElements.push(node);
+        return node;
+    };
+
+    /**
+     * @param {(string|Array|Object)[]} viewDescription
+     */
+    const buildFromArray = function(viewDescription) {
+        const ifStatements = [];
+        for(const element of viewDescription) {
+            handleViewDescriptionElement(element, ifStatements);
+        }
+    };
+
+    const buildViewDescription = function(viewDescription) {
+        if(typeof  viewDescription === 'string') {
+            const node = new ViewTextElement(viewDescription, $viewProps);
+            $fragmentElements.push(node);
+            return;
+        }
+        if(typeof $viewDescription !== 'object') {
+            return;
+        }
+        if(viewDescription.repeat) {
+            const node = new ViewLoopFragment(viewDescription, $viewProps);
+            $fragmentElements.push(node);
+            return;
+        }
+        if(Array.isArray(viewDescription)) {
+            buildFromArray(viewDescription);
+            return;
+        }
+        if(viewDescription.component) {
+            const node = new ViewComponentElement(viewDescription, $viewProps);
+            $fragmentElements.push(node);
+            if(viewDescription.ref) {
+                $viewProps.view.setReference(viewDescription.ref, node);
+                $nodeToReference = node;
+            }
+            return;
+        }
+        const node = new ViewHtmlElement(viewDescription, $viewProps);
+        $fragmentElements.push(node);
+        if(viewDescription.ref) {
+            $viewProps.view.setReference(viewDescription.ref, node);
+            $nodeToReference = node;
         }
     };
 
@@ -59,43 +110,21 @@ const ViewElementFragment = function($viewDescription, $viewProps) {
         if(!$viewProps.componentInstance) {
             return;
         }
+        buildViewDescription($viewDescription);
+    };
 
-        if(typeof  $viewDescription === 'string') {
-            const node = new ViewTextElement($viewDescription, $viewProps);
-            $fragmentElements.push(node);
+    this.restoreRef = function() {
+        if(!$nodeToReference || !$viewDescription.ref) {
             return;
         }
-        if(typeof $viewDescription !== 'object') {
-            return;
-        }
-        if($viewDescription.repeat) {
-            const node = new ViewLoopFragment($viewDescription, $viewProps);
-            $fragmentElements.push(node);
-            return;
-        }
-        if(Array.isArray($viewDescription)) {
-            buildFromArray();
-            return;
-        }
-        if($viewDescription.component) {
-            const node = new ViewComponentElement($viewDescription, $viewProps);
-            $fragmentElements.push(node);
-            if($viewDescription.ref) {
-                $viewProps.view.setReference($viewDescription.ref, node);
-            }
-            return;
-        }
-        const node = new ViewHtmlElement($viewDescription, $viewProps);
-        $fragmentElements.push(node);
-        if($viewDescription.ref) {
-            $viewProps.view.setReference($viewDescription.ref, node);
-        }
+        $viewProps.view.setReference($viewDescription.ref, $nodeToReference);
     };
 
     /**
      * @param {HTMLElement|DocumentFragment} parentNode
      */
     this.renderProcess = function(parentNode) {
+        $parentNode = parentNode;
         this.build();
         for(const fragmentElement of $fragmentElements) {
             fragmentElement.render(parentNode);
@@ -109,9 +138,9 @@ const ViewElementFragment = function($viewDescription, $viewProps) {
         this.setIsUnmounted();
     };
 
-    this.mountProcess = function() {
+    this.mountProcess = function(force = false) {
         for(const fragmentElement of $fragmentElements) {
-            fragmentElement.mount();
+            fragmentElement.mount(force);
         }
         this.setIsMounted();
     };
@@ -121,6 +150,15 @@ const ViewElementFragment = function($viewDescription, $viewProps) {
         }
         this.setIsRemoved();
     };
+
+    ViewElementFragmentDev.apply(this, [{
+        $viewDescription,
+        $fragmentElements,
+        $callbacks: {
+            handleViewDescriptionElement,
+            getParentNode: () => $parentNode
+        },
+    }]);
 
 };
 
@@ -134,11 +172,11 @@ const cleanConditionStatement = function(statementTemplate) {
 
 /**
  * @param {string[]} previousConditions
- * @param {string} currentIf
+ * @param {?string} currentIf
  *
  * @returns {string}
  */
-const transformElseIf = function(previousConditions, currentIf) {
+const transformElseIf = function(previousConditions, currentIf = null) {
     const notStatementsCleaned = previousConditions.map(cleanConditionStatement);
     const notStatement = '!(' + notStatementsCleaned.join('||') + ')';
 

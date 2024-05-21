@@ -166,6 +166,12 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
         return $switchContainers.selfFragment;
     };
 
+    this.getViewDescription = function() {
+        return $viewDescription;
+    };
+
+    this.updateViewDescription = () => {};
+
 };
 
 export default AbstractView;

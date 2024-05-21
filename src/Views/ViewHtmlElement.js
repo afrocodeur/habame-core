@@ -7,6 +7,9 @@ import Directive from "src/Directive/Directive";
 import State from "src/State/State";
 import ActionTemplate from "src/Template/ActionTemplate";
 import { DEFAULT_SLOT_NAME, SLOT_RENDER_TAG_NAME, EVENT_DIRECTIVE } from "src/constantes";
+import ViewDescriptionCompare from "../Helpers/ViewDescriptionCompare";
+import view from "./View";
+import ViewHtmlElementDev from "./Dev/ViewHtmlElementDev";
 /**
  *
  * @param {Array|Object} $viewDescription
@@ -30,6 +33,7 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
 
     /** @type {Object.<string, ViewHtmlElementAttribute>} */
     const $htmlAttributes = {};
+    const $htmlEventsStore = {};
 
     const $lifecycleListeners = Lifecycle.newListenersStore();
 
@@ -118,25 +122,35 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
         this.setAnchor($viewAnchor);
     };
 
+    const buildEventConnexion = function(eventPath, events) {
+        const eventSteps = eventPath.split('.');
+        const eventName = eventSteps.pop();
+        const actionName = events[eventPath];
+        const actionTemplate = new ActionTemplate(actionName, $viewProps);
+        const eventCallback = function(event) {
+            if(eventSteps.includes(EVENT_DIRECTIVE.PREVENT_DEFAULT)) {
+                event.preventDefault();
+            }
+            if(eventSteps.includes(EVENT_DIRECTIVE.STOP_PROPAGATION)) {
+                event.stopPropagation();
+            }
+            actionTemplate.handle(event);
+        };
+        $htmlNode.addEventListener(eventName, eventCallback);
+
+        $htmlEventsStore[eventPath] = {
+            name: eventName,
+            callback: eventCallback
+        }
+    };
+
     const buildEventsConnexion = function() {
         if(!$viewDescription.events) {
             return;
         }
 
         for(const eventPath in $viewDescription.events) {
-            const eventSteps = eventPath.split('.');
-            const eventName = eventSteps.pop();
-            const actionName = $viewDescription.events[eventPath];
-            const actionTemplate = new ActionTemplate(actionName, $viewProps);
-            $htmlNode.addEventListener(eventName, function(event) {
-                if(eventSteps.includes(EVENT_DIRECTIVE.PREVENT_DEFAULT)) {
-                    event.preventDefault();
-                }
-                if(eventSteps.includes(EVENT_DIRECTIVE.STOP_PROPAGATION)) {
-                    event.stopPropagation();
-                }
-                actionTemplate.handle(event);
-            });
+            buildEventConnexion(eventPath, $viewDescription.events);
         }
     };
 
@@ -212,6 +226,13 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
     this.directive = function() {
         return $htmlNodeDirective;
     };
+
+    ViewHtmlElementDev.apply(this, [{
+        $viewDescription,
+        $callback: {
+            getChildren: () => $children
+        }
+    }]);
 };
 
 export default ViewHtmlElement;
