@@ -1,6 +1,5 @@
 import ViewFactory from "src/Views/ViewFactory";
 import Component from 'src/Component/Component';
-import view from "../Views/View";
 
 /**
  *

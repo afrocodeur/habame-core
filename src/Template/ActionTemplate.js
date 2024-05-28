@@ -10,14 +10,20 @@ import AbstractTemplate from "./AbstractTemplate";
  */
 const ActionTemplate = function($template, $viewProps) {
 
+    const $self =  this;
+
     AbstractTemplate.apply(this, [$viewProps]);
 
     /** @type {{states: string[], actions: string[]}} */
-    const $requestedVariablesNames = this.getRequestedVars($template, false);
+    let $requestedVariablesNames = {};
     const $stateToUse = $viewProps.localState ?? $viewProps.componentInstance.getState();
     const $actions = $viewProps.componentInstance.getActions();
 
+    /** @type {?Function} */
     let $actionFunctionBridge = null;
+
+    /** @type {?string} */
+    let $lastTemplate = null;
 
 
     /**
@@ -28,14 +34,20 @@ const ActionTemplate = function($template, $viewProps) {
         $actionFunctionBridge.apply($actions, [$stateToUse, $requestedVariablesNames.states, $actions, event, args]);
     };
 
-    ((function() { // constructor
-
-        if($actions[$template]) {
-            $template = $template + '.apply(actions, (Array.isArray($args) ? $args : [$event]))';
+    /**
+     * @param {string} template
+     */
+    this.refresh = function(template) {
+        if(template === $lastTemplate) {
+            return;
+        }
+        $requestedVariablesNames = this.getRequestedVars(template, false);
+        if($actions[template]) {
+            template = template + '.apply(actions, (Array.isArray($args) ? $args : [$event]))';
         }
 
         try {
-            let returnCode = 'return '+$template+';';
+            let returnCode = 'return '+template+';';
             const { states, actions} = $requestedVariablesNames;
 
             $actionFunctionBridge = new Function(
@@ -44,10 +56,14 @@ const ActionTemplate = function($template, $viewProps) {
                 (actions.length ? 'const {' + actions.join(',') + '} = actions;' : '') +
                 returnCode
             );
+            $lastTemplate = template;
         } catch (e) {
-            throw new Error('Syntax error : ' + $template);
+            throw new Error('Syntax error : ' + template);
         }
+    };
 
+    ((function() { // constructor
+        $self.refresh($template);
     })());
 };
 

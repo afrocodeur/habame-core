@@ -7,12 +7,11 @@ import Directive from "src/Directive/Directive";
 import State from "src/State/State";
 import ActionTemplate from "src/Template/ActionTemplate";
 import { DEFAULT_SLOT_NAME, SLOT_RENDER_TAG_NAME, EVENT_DIRECTIVE } from "src/constantes";
-import ViewDescriptionCompare from "../Helpers/ViewDescriptionCompare";
-import view from "./View";
+
 import ViewHtmlElementDev from "./Dev/ViewHtmlElementDev";
 /**
  *
- * @param {Array|Object} $viewDescription
+ * @param {Object} $viewDescription
  * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
  *
  *
@@ -33,6 +32,7 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
 
     /** @type {Object.<string, ViewHtmlElementAttribute>} */
     const $htmlAttributes = {};
+    /** @type {Object.<string, {name: string, callback: Function,disconnect: Function, updateAction: Function}>} */
     const $htmlEventsStore = {};
 
     const $lifecycleListeners = Lifecycle.newListenersStore();
@@ -122,6 +122,10 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
         this.setAnchor($viewAnchor);
     };
 
+    /**
+     * @param {string} eventPath
+     * @param {Object.<string, string>} events
+     */
     const buildEventConnexion = function(eventPath, events) {
         const eventSteps = eventPath.split('.');
         const eventName = eventSteps.pop();
@@ -140,8 +144,10 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
 
         $htmlEventsStore[eventPath] = {
             name: eventName,
-            callback: eventCallback
-        }
+            callback: eventCallback,
+            disconnect: () => $htmlNode.removeEventListener(eventName, eventCallback),
+            updateAction: (action) => actionTemplate.refresh(action)
+        };
     };
 
     const buildEventsConnexion = function() {
@@ -170,8 +176,14 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
         renderContent(parentNode);
     };
 
-    this.unmountProcess = function() {
+    /**
+     * @param {boolean} full
+     */
+    this.unmountProcess = function(full) {
         $lifeCycleHandler.beforeUnmount();
+        if(full) {
+            this.unmountAnchors($viewAnchor.parentNode, $viewAnchor);
+        }
         this.moveIntoFragment($htmlNode);
         if($htmlNode instanceof DocumentFragment) {
             $children.unmount();
@@ -184,11 +196,12 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
      * @param {ViewIfStatement} ifStatement
      */
     this.mountProcess = function(ifStatement) {
+        this.mountAnchors();
         if(ifStatement && ifStatement.isFalse()) {
             return;
         }
         $lifeCycleHandler.beforeMount();
-        if($children === null) {
+        if(($viewDescription.content || $viewDescription.name === SLOT_RENDER_TAG_NAME) && $children === null) {
             const fragment = document.createDocumentFragment();
             renderContent(fragment);
             this.insertAfter(fragment, $viewAnchor);
@@ -197,7 +210,7 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
         }
         this.moveIntoParent();
         if($htmlNode instanceof DocumentFragment) {
-            $children.mountProcess();
+            $children.mount();
             this.insertAfter($htmlNode, $viewAnchor);
         }
         this.setIsMounted();
@@ -229,8 +242,13 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
 
     ViewHtmlElementDev.apply(this, [{
         $viewDescription,
+        $htmlAttributes,
+        $viewProps,
+        $htmlEventsStore,
         $callback: {
-            getChildren: () => $children
+            getChildren: () => $children,
+            getHtmlNode: () => $htmlNode,
+            buildEventConnexion
         }
     }]);
 };

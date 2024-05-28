@@ -1,4 +1,5 @@
 import TextTemplateDescription from "src/Template/TextTemplateDescription";
+import ViewHtmlElementAttributeDev from "./Dev/ViewHtmlElementAttributeDev";
 
 const ATTR_MAPPERS =  {
     style: (value) => {
@@ -37,7 +38,7 @@ const ViewHtmlElementAttribute =  function($htmlNode, $attrName, $attrValue, $vi
             $htmlNode[$attrName] = value;
             return;
         }
-        if(typeof $htmlNode.setAttribute !== 'function') {
+        if(!$htmlNode || typeof $htmlNode.setAttribute !== 'function') {
             return;
         }
         $htmlNode.setAttribute($attrName, value);
@@ -55,6 +56,8 @@ const ViewHtmlElementAttribute =  function($htmlNode, $attrName, $attrValue, $vi
             listener.apply(listener, params || []);
         });
     };
+
+    this.disconnect = () => {};
 
     this.value = function() {
         const values = [];
@@ -81,14 +84,23 @@ const ViewHtmlElementAttribute =  function($htmlNode, $attrName, $attrValue, $vi
         $listeners.onUpdate.push(listener);
     };
 
+    this.emitUpdate = function() {
+        const value = this.value();
+        updateNodeAttribute(value);
+        trigger('onUpdate', [value]);
+    };
+
     ((() => { /* Constructor */
         updateNodeAttribute(this.value());
         $viewProps.componentInstance.getState().onUpdate($templateDescription.statesToWatch(), () => {
-            const value = this.value();
-            updateNodeAttribute(value);
-            trigger('onUpdate', [value]);
+            this.emitUpdate();
         });
     })());
+
+    ViewHtmlElementAttributeDev.apply(this, [{
+        $templateDescription,
+        $callbacks: { updateNodeAttribute }
+    }]);
 };
 
 export default ViewHtmlElementAttribute;

@@ -3,10 +3,11 @@ import Template from "src/Template/Template";
 import ComponentProps from "src/Component/ComponentProps";
 import ActionTemplate from "src/Template/ActionTemplate";
 import ViewElementFragment from "src/Views/ViewElementFragment";
+import ViewComponentElementDev from "./Dev/ViewComponentElementDev";
 
 /**
  *
- * @param {Array|Object} $viewDescription
+ * @param {Object} $viewDescription
  * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
  *
  * @class
@@ -23,6 +24,12 @@ const ViewComponentElement = function($viewDescription, $viewProps) {
 
     /** @type {?ComponentProps} */
     let $componentProps = null;
+    /** @type {?HbEvent} */
+    let $hbEvent = null;
+    /** @type {Object.<string, {template: ActionTemplate, callback: Function, name: string}>} */
+    let $componentEventActions = {};
+    /** @type {Object.<string, { builder: function(*, *): ViewElementFragment, updateViewDescription: Function, deleteInstances: Function }>} */
+    let $slotManagers = {};
 
     const build = function() {
         const props = {};
@@ -36,31 +43,55 @@ const ViewComponentElement = function($viewDescription, $viewProps) {
         buildEventListenerWithParent();
     };
 
-    const getSlotBuilder = function(viewDescription) {
-        return function(container, callback) {
-            const localState = callback(viewDescription.props);
-            const customProps = { ...$viewProps };
-            if(localState) {
-                localState.parent = $viewProps.localState || $viewProps.componentInstance.getState();
-                customProps.localState = localState;
+    /**
+     * @param {Object} viewDescription
+     * @returns {{ builder: function(*, *): ViewElementFragment, updateViewDescription: Function, deleteInstances: Function }}
+     */
+    const getSlotManagerObject = function(viewDescription) {
+        /** @type {ViewElementFragment[]} */
+        const instances = [];
+        return {
+            updateViewDescription: function(newViewDescription) {
+                viewDescription = newViewDescription;
+                instances.forEach((node) => {
+                    node.updateViewDescription(newViewDescription);
+                });
+            },
+            deleteInstances: function() {
+                instances.forEach((node)=> {
+                    node.remove();
+                });
+            },
+            builder: function(container, callback) {
+                const localState = callback(viewDescription.props);
+                const customProps = { ...$viewProps };
+                if(localState) {
+                    localState.parent = $viewProps.localState || $viewProps.componentInstance.getState();
+                    customProps.localState = localState;
+                }
+                const node = new ViewElementFragment(viewDescription, customProps);
+                node.render(container);
+                instances.push(node);
+                return node;
             }
-            const node = new ViewElementFragment(viewDescription, customProps);
-            node.render(container);
-            return node;
         };
     };
 
     const getSlots = function() {
         const slots = { };
         if($viewDescription.content) {
-            slots.default = getSlotBuilder($viewDescription.content);
+            const slotManager = getSlotManagerObject($viewDescription.content);
+            slots.default = slotManager.builder;
+            $slotManagers.default = slotManager;
         }
         if(!$viewDescription.slots) {
             return slots;
         }
 
         for(const name in $viewDescription.slots) {
-            slots[name] = getSlotBuilder($viewDescription.slots[name]);
+            const slotManager = getSlotManagerObject($viewDescription.slots[name]);
+            $slotManagers[name] = slotManager;
+            slots[name]= slotManager.builder;
         }
         return slots;
     };
@@ -70,17 +101,27 @@ const ViewComponentElement = function($viewDescription, $viewProps) {
         if(!$viewDescription.events || !componentActions) {
             return;
         }
-        const hbEvent = $componentElement.getHbEvent();
+        $hbEvent = $componentElement.getHbEvent();
 
         for(const eventName in $viewDescription.events) {
             const actionName = $viewDescription.events[eventName];
-            const actionTemplate = new ActionTemplate(actionName, $viewProps);
-            hbEvent.addEventListener(eventName, function() {
-                const params = Array.from(arguments);
-                params.push($viewProps.localState);
-                actionTemplate.handle(null, params);
-            });
+            buildEvent(eventName, actionName);
         }
+    };
+
+    /**
+     * @param {string} eventName
+     * @param {string} actionName
+     */
+    const buildEvent = function(eventName, actionName) {
+        const actionTemplate = new ActionTemplate(actionName, $viewProps);
+        const callback = function() {
+            const params = Array.from(arguments);
+            params.push($viewProps.localState);
+            actionTemplate.handle(null, params);
+        };
+        $componentEventActions[eventName] = { template: actionTemplate, callback, name: eventName };
+        $hbEvent.addEventListener(eventName, callback);
     };
 
     /**
@@ -96,8 +137,14 @@ const ViewComponentElement = function($viewDescription, $viewProps) {
         $componentElement.render(parentNode);
     };
 
-    this.unmountProcess = function() {
-        $componentElement.unmount();
+    /**
+     * @param {boolean} full
+     */
+    this.unmountProcess = function(full) {
+        if(full) {
+            this.unmountAnchors($viewAnchor.parentNode, $viewAnchor);
+        }
+        $componentElement.unmount(full);
         this.setIsUnmounted();
     };
 
@@ -105,6 +152,7 @@ const ViewComponentElement = function($viewDescription, $viewProps) {
      * @param {ViewIfStatement} ifStatement
      */
     this.mountProcess = function(ifStatement) {
+        this.mountAnchors();
         if(ifStatement && ifStatement.isFalse()) {
             return;
         }
@@ -132,6 +180,21 @@ const ViewComponentElement = function($viewDescription, $viewProps) {
         return $componentElement.getPublicMethod();
     };
 
+
+    ViewComponentElementDev.apply(this, [{
+        $viewDescription,
+        $viewProps,
+        $componentEventActions,
+        $slotManagers,
+        $callbacks: {
+            getProps: () => $componentProps,
+            getElement: () => $componentElement,
+            getHbEvent: () => $hbEvent,
+            getSlots,
+            buildEvent,
+            getSlotManagerObject
+        }
+    }]);
 };
 
 export default ViewComponentElement;

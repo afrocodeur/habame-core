@@ -34,13 +34,28 @@ const ViewIfStatement = function($ifStatement, $viewProps) {
         return !!$ifTemplate.value() === true;
     };
 
+    this.trigger = trigger;
+
     this.isFalse = function() {
         return !!$ifTemplate.value() === false;
     };
 
+    this.loadStateWatcher = function() {
+        const state = $viewProps.componentInstance.getState();
+        state.removeOnUpdateListener(trigger);
+        state.onUpdate($ifTemplate.statesToWatch(), trigger, true);
+    };
+
+    /**
+     * @param {string} template
+     */
+    this.refresh = function(template) {
+        $ifTemplate.refresh(template);
+        this.loadStateWatcher();
+    };
 
     ((() => { /* Constructor */
-        $viewProps.componentInstance.getState().onUpdate($ifTemplate.statesToWatch(), trigger, true);
+        this.loadStateWatcher();
     })());
 
 };

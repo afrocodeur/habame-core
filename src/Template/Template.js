@@ -13,11 +13,10 @@ import AbstractTemplate from "./AbstractTemplate";
  */
 const Template = function($template, $viewProps, $isWithTry = false, $catchValue = false) {
 
+    const $self = this;
+
     AbstractTemplate.apply(this, [$viewProps]);
 
-    $template = $template.trim().replace(/^\{\{|\}\}$/g, '').trim();
-
-    const RANGE_TEMPLATE_REGEX = /^([a-z0-9.$_]+)\.\.([a-z0-9.$_]+)$/i;
 
     /** @type {Function[]} */
     const $listeners = [];
@@ -25,20 +24,37 @@ const Template = function($template, $viewProps, $isWithTry = false, $catchValue
     /** @type {State} */
     let $componentState = $viewProps.componentInstance.getState();
 
-    if(RANGE_TEMPLATE_REGEX.test($template)) {
-        const matches = $template.match(RANGE_TEMPLATE_REGEX);
-        matches.shift();
-        if(matches.length !== 2) {
-            return;
-        }
-        const [min, max] = matches;
-        $template = 'Array.from({ length: ' + max+ '}, function(value, index) { return index + ' + min + '; })';
-    }
-
     /** @type {string[]} */
-    const requestedVariablesNames = this.getRequestedVars($template);
+    let requestedVariablesNames = [];
 
+    /** @type {?Function} */
     let $templateFunction = null;
+    /** @type {{source: null|string, transformed: null|string}} */
+    let $lastTemplate = {
+        source: null,
+        transformed: null
+    };
+
+
+    /**
+     * @param {string} template
+     * @returns {string}
+     */
+    const getTransformedTemplate = function(template) {
+        const RANGE_TEMPLATE_REGEX = /^([a-z0-9.$_]+)\.\.([a-z0-9.$_]+)$/i;
+        if(RANGE_TEMPLATE_REGEX.test(template)) {
+            const matches = template.match(RANGE_TEMPLATE_REGEX);
+            matches.shift();
+            if(matches.length !== 2) {
+                throw new Error('Range error');
+            }
+            const [min, max] = matches;
+            template = 'Array.from({ length: ' + max+ '}, function(value, index) { return index + ' + min + '; })';
+        }
+        requestedVariablesNames = $self.getRequestedVars(template);
+        return template;
+    };
+
 
     const trigger = () => {
         $listeners.forEach((listener) => {
@@ -60,6 +76,9 @@ const Template = function($template, $viewProps, $isWithTry = false, $catchValue
         return requestedVariablesNames;
     };
 
+    /**
+     * @param {Function} listener
+     */
     this.disconnect = function(listener) {
         const index = $listeners.indexOf(listener);
         if(index < 0) {
@@ -81,17 +100,34 @@ const Template = function($template, $viewProps, $isWithTry = false, $catchValue
                 states[name] = valuesToUse[name];
                 continue;
             }
-            const state = $viewProps.getState(name, $template);
+            const state = $viewProps.getState(name, $lastTemplate.transformed);
             if(state) {
                 states[name] = state.value();
             }
         }
-        return $templateFunction(states);
+        return $templateFunction ? $templateFunction(states) : undefined;
     };
 
-    (function () { /* Constructor */
+    /**
+     * @param {?string} sourceTemplate
+     * @param {boolean} cleanState
+     */
+    this.refresh = function(sourceTemplate = null, cleanState = false) {
+        sourceTemplate = sourceTemplate === null ? $template : sourceTemplate;
+        if(sourceTemplate === $lastTemplate.source) {
+            return;
+        }
+
+        const stateSource = $viewProps.localState || $componentState;
+
+        if(cleanState === true && $viewProps.localState) {
+            $viewProps.localState.disconnect();
+        }
+
+        let template = sourceTemplate.trim().replace(/^\{\{|}}$/g, '').trim();
+        template = getTransformedTemplate(template);
         try {
-            let returnCode = 'return '+ $template +';';
+            let returnCode = 'return '+ template +';';
 
             if($isWithTry) {
                 returnCode = ' try { '+ returnCode +' } catch(e) { return '+ $catchValue +'; }';
@@ -103,20 +139,23 @@ const Template = function($template, $viewProps, $isWithTry = false, $catchValue
                 returnCode
             );
         } catch (e) {
-            throw new Error('Syntax error : '+ $template);
+            throw new Error('Syntax error : '+ template);
         }
 
+        $lastTemplate.transformed = template;
+        $lastTemplate.source = sourceTemplate;
+        if(cleanState) {
+            trigger();
+        }
         if(!requestedVariablesNames.length) {
             return;
         }
+        stateSource.onUpdate(requestedVariablesNames, trigger);
+    };
 
-        if($viewProps.localState) {
-            $viewProps.localState.onUpdate(requestedVariablesNames, trigger);
-            return;
-        }
-
-        $componentState.onUpdate(requestedVariablesNames, trigger);
-    }());
+    ((() => {
+        this.refresh();
+    })());
 };
 
 export default Template;

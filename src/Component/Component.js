@@ -39,6 +39,9 @@ const Component = function($name, $view, $controller, $props, $appInstance) {
 
     const $publicFunctions = $controller($componentRequirements);
 
+    /**
+     * @param {HTMLElement|DocumentFragment} parentNode
+     */
     this.render = function(parentNode) {
         $lifecycleHandler.beforeCreate();
         $view.render(parentNode);
@@ -49,9 +52,12 @@ const Component = function($name, $view, $controller, $props, $appInstance) {
         return $view.isRendered();
     };
 
-    this.unmount = function() {
+    /**
+     * @param {boolean} full
+     */
+    this.unmount = function(full) {
         $lifecycleHandler.beforeUnmount();
-        $view.unmount();
+        $view.unmount(full);
         $lifecycleHandler.unmounted();
     };
 
@@ -123,17 +129,25 @@ const Component = function($name, $view, $controller, $props, $appInstance) {
         return !$publicFunctions ? {} : { ...$publicFunctions };
     };
 
+    /**
+     * @param {Function} controller
+     */
     this.updateController = function(controller) {
         const stateValues = $state.getAll();
         $lifecycle.clearAll();
         $event.clearAll();
-        for(const key in $refs) {
-            $refs[key] = undefined;
-        }
         controller($componentRequirements);
         for(const oldStateName in stateValues) {
             if($state.exists(oldStateName)) {
-                $state.set({[oldStateName]: stateValues[oldStateName]});
+                const value = $state.get(oldStateName).value();
+                const oldValue = stateValues[oldStateName];
+                if(typeof value !== typeof oldValue) {
+                    continue;
+                }
+                if(Array.isArray(oldValue)) {
+                    continue;
+                }
+                $state.set({ [oldStateName]: stateValues[oldStateName] });
             }
         }
     };

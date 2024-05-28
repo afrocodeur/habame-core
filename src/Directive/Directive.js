@@ -16,6 +16,10 @@ const Directive = function($node, $directives, $attributeTemplates, $viewProps, 
     const $nodeDirectives = {};
     const $lifeCycle = new Lifecycle($lifecycleListeners);
 
+    /**
+     * @param {string} name
+     * @returns {*}
+     */
     this.get = function(name) {
         return $nodeDirectives[name];
     };

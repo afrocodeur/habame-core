@@ -1,5 +1,6 @@
 import TextTemplateDescription from "src/Template/TextTemplateDescription";
 import AbstractView from "src/Views/AbstractView";
+import ViewTextElementDev from "./Dev/ViewTextElementDev";
 
 /**
  * @param {string} $viewDescription
@@ -11,17 +12,20 @@ import AbstractView from "src/Views/AbstractView";
 const ViewTextElement = function($viewDescription, $viewProps) {
 
     AbstractView.call(this, { $viewDescription, $viewProps });
-
     const $viewDescriptionDetails = new TextTemplateDescription($viewDescription, $viewProps);
 
     /** @type {Text[]} */
-    let $htmlTextNodes = [];
+    const $htmlTextNodes = [];
+    /** @type {{ partValue: string, htmlTextNode: Text }[]} */
+    const $textNodes = [];
+    let $parentNode = null;
 
     const build = function() {
         $viewDescriptionDetails.each((viewPart) => {
             let partValue = (!viewPart.hasAState) ? viewPart.value : viewPart.template.value();
             const htmlTextNode = document.createTextNode(partValue);
             $htmlTextNodes.push(htmlTextNode);
+            $textNodes.push({ partValue, htmlTextNode });
 
             if(!viewPart.hasAState) {
                 return;
@@ -44,6 +48,7 @@ const ViewTextElement = function($viewDescription, $viewProps) {
      * @param {HTMLElement|DocumentFragment} parentNode
      */
     this.renderProcess = function(parentNode) {
+        $parentNode = parentNode;
         if(this.isRendered()) {
             return;
         }
@@ -69,6 +74,16 @@ const ViewTextElement = function($viewDescription, $viewProps) {
         this.setIsRemoved();
     };
 
+    ViewTextElementDev.apply(this, [{
+        $viewDescription,
+        $viewDescriptionDetails,
+        $htmlTextNodes,
+        $textNodes,
+        callbacks: {
+            createConnexion,
+            getParentNode: () => $parentNode
+        }
+    }]);
 };
 
 export default ViewTextElement;

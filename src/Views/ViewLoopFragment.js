@@ -3,6 +3,7 @@ import ViewElementFragment from "src/Views/ViewElementFragment";
 import State from "src/State/State";
 import Template from "src/Template/Template";
 import AbstractView from "src/Views/AbstractView";
+import ViewLoopFragmentDev from "./Dev/ViewLoopFragmentDev";
 
 /**
  * @param {Array|Object} $viewDescription
@@ -17,6 +18,7 @@ const ViewLoopFragment = function($viewDescription, $viewProps) {
 
     const $viewAnchor = document.createComment('Loop Anchor Start : ' + $viewDescription.repeat);
     const $viewAnchorEnd = document.createComment('Loop Anchor End : ' + $viewDescription.repeat);
+    /** @type {{store: Object.<string, {node: ViewElementFragment, localState: State}>,current: Array,last: Array }} */
     const $nodeInstancesByKey = {
         store: {},
         current: [],
@@ -26,24 +28,37 @@ const ViewLoopFragment = function($viewDescription, $viewProps) {
     $viewDescriptionWithoutRepeat.repeat = null;
 
     const $loopTemplate = new LoopTemplateDescription($viewDescription.repeat, $viewProps);
-    const $loopExpressionDescription = $loopTemplate.expressionDescription();
-    const $itemKeyName = $loopExpressionDescription.getIterableItemKeyName();
-    const $itemValueName = $loopExpressionDescription.getIterableItemValueName();
-    const keyState = new State({ [$itemKeyName]: '' });
+    /** @type {?AbstractLoopExpressionHandler} */
+    let $loopExpressionDescription = null;
+    let $itemKeyName = '';
+    let $itemValueName = '';
+    let keyState = new State({ [$itemKeyName]: '' });
     keyState.parent = $viewProps.localState ?? $viewProps.componentInstance.getState();
-    const $keyTemplate = new Template($viewDescriptionWithoutRepeat.key || $itemKeyName, { ...$viewProps, localState: keyState});
+    const $keyTemplate = new Template('', { ...$viewProps, localState: keyState});
 
     let $isBuild = false;
+
+    const handleLoopExpression = () => {
+        $loopExpressionDescription = $loopTemplate.expressionDescription();
+        if(!$loopExpressionDescription) {
+            return;
+        }
+        $itemKeyName = $loopExpressionDescription.getIterableItemKeyName();
+        $itemValueName = $loopExpressionDescription.getIterableItemValueName();
+        keyState.add($itemKeyName, '');
+    };
 
     const build = () => {
         $isBuild = true;
         this.insertAfter($viewAnchorEnd, $viewAnchor);
         updateIteration();
-        $loopTemplate.onUpdate(() => {
-            updateIteration(true);
-        });
+        $loopTemplate.onUpdate(() => { updateIteration(); });
     };
 
+    /**
+     * @param {Object} iterable
+     * @param {string|number} index
+     */
     const updateIterationItem = function(iterable, index) {
         // TODO : create this own state or update it
         const stateData = { [$itemValueName]: iterable[index] };
@@ -136,11 +151,28 @@ const ViewLoopFragment = function($viewDescription, $viewProps) {
         build();
     };
 
-    this.unmountProcess = function() {
+    /**
+     * @param {boolean} full
+     */
+    this.unmountProcess = function(full) {
+        this.setParent(null);
         for (const nodeKey of $nodeInstancesByKey.current) {
             $nodeInstancesByKey.store[nodeKey].node.unmount();
         }
-        // this.moveIntoFragment($viewAnchorEnd);
+        if(full) {
+            const nodes = [$viewAnchor];
+            let currentStep = $viewAnchor;
+
+            while(currentStep.nextSibling !== $viewAnchorEnd) {
+                currentStep = currentStep.nextSibling;
+                if(currentStep instanceof Comment) {
+                    nodes.push(currentStep);
+                }
+            }
+            nodes.push($viewAnchorEnd);
+
+            this.unmountAnchors($viewAnchor.parentNode, nodes);
+        }
         this.setIsUnmounted();
     };
 
@@ -148,6 +180,7 @@ const ViewLoopFragment = function($viewDescription, $viewProps) {
      * @param {ViewIfStatement} ifStatement
      */
     this.mountProcess = function(ifStatement) {
+        this.mountAnchors();
         if(ifStatement && ifStatement.isFalse()) {
             return;
         }
@@ -155,14 +188,6 @@ const ViewLoopFragment = function($viewDescription, $viewProps) {
             for (const nodeKey of $nodeInstancesByKey.current) {
                 $nodeInstancesByKey.store[nodeKey].node.mount();
             }
-            // const nextElement = $viewAnchor.nextSibling;
-            // if(!nextElement) {
-                // $viewAnchor.parentNode.appendChild(this.unMountedFragment());
-            // }
-            // else {
-            //     console.log('no next element')
-                // $viewAnchor.parentNode.insertBefore(this.unMountedFragment(), nextElement);
-            // }
         }
         else {
             build();
@@ -178,6 +203,23 @@ const ViewLoopFragment = function($viewDescription, $viewProps) {
         $viewAnchorEnd.remove();
         this.setIsRemoved();
     };
+
+    ViewLoopFragmentDev.apply(this, [{
+        $loopTemplate,
+        $keyTemplate,
+        $nodeInstancesByKey,
+        $viewDescriptionWithoutRepeat,
+        $callbacks: {
+            handleLoopExpression,
+            updateIteration,
+            getItemKeyName: () => $itemKeyName
+        }
+    }]);
+
+    ((() => {
+        handleLoopExpression();
+        $keyTemplate.refresh($viewDescriptionWithoutRepeat.key || $itemKeyName);
+    })());
 
 };
 

@@ -2,6 +2,7 @@ import ViewElementFragment from "src/Views/ViewElementFragment";
 import AbstractView from "src/Views/AbstractView";
 import getSafeNode from "../Component/getSafeNode";
 import ViewRefCollection from "./ViewRefCollection";
+import ViewDev from "./Dev/ViewDev";
 
 /**
  *
@@ -15,12 +16,18 @@ import ViewRefCollection from "./ViewRefCollection";
 const View = function($viewDescription, $appInstance) {
 
     const $viewAnchor = document.createComment('');
+    const $viewAnchorEnd = document.createComment('');
 
-    /** @type {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} */
+    /** @type {null|HTMLElement|ParentNode} */
+    let $parentNode = null;
+
+    /** @type {{view: View, componentInstance: ?Component, appInstance: App, localState: ?State, getState: ?Function }} */
     const $viewProps = {
         view: this,
         appInstance: $appInstance,
-        componentInstance: null
+        componentInstance: null,
+        localState: null,
+        getState: null
     };
 
     AbstractView.call(this, { $viewDescription, $viewProps });
@@ -38,15 +45,23 @@ const View = function($viewDescription, $appInstance) {
      * @param {ViewIfStatement} ifStatement
      */
     this.renderProcess = function(parentNode, ifStatement) {
+        $parentNode = parentNode;
         parentNode.appendChild($viewAnchor);
         if(ifStatement && ifStatement.isFalse()) {
             return;
         }
         $viewFragment.render(parentNode);
+        parentNode.appendChild($viewAnchorEnd);
     };
 
-    this.unmountProcess = function () {
-        $viewFragment.unmount();
+    /**
+     * @param {boolean} full
+     */
+    this.unmountProcess = function (full) {
+        if(full) {
+            this.unmountAnchors($viewAnchor.parentNode, $viewAnchor);
+        }
+        $viewFragment.unmount(full);
         this.setIsUnmounted();
     };
 
@@ -54,6 +69,7 @@ const View = function($viewDescription, $appInstance) {
      * @param {ViewIfStatement} ifStatement
      */
     this.mountProcess = function(ifStatement) {
+        this.mountAnchors();
         if(ifStatement && ifStatement.isFalse()) {
             return;
         }
@@ -89,6 +105,7 @@ const View = function($viewDescription, $appInstance) {
         };
         $componentInstance = componentInstance;
         $viewAnchor.textContent = componentInstance.getName() +' Component View Anchor';
+        $viewAnchorEnd.textContent = componentInstance.getName() +' Component View End Anchor';
     };
 
     /**
@@ -127,9 +144,14 @@ const View = function($viewDescription, $appInstance) {
         return $componentInstance;
     };
 
-    this.updateViewDescription = function(viewDescription) {
-        $viewFragment.updateViewDescription(viewDescription);
-    };
+    ViewDev.apply(this, [{
+        $viewFragment,
+        $viewAnchor,
+        $viewAnchorEnd,
+        $callbacks: {
+            getParentNode: () => $parentNode
+        }
+    }]);
 
 };
 

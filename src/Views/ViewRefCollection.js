@@ -1,6 +1,6 @@
 /**
  *
- * @constructor
+ * @class
  */
 const ViewRefCollection = function() {
 
@@ -10,6 +10,9 @@ const ViewRefCollection = function() {
         $references.splice(0);
     };
 
+    /**
+     * @param {Object} node
+     */
     this.push = function(node) {
         $references.push(node);
     };

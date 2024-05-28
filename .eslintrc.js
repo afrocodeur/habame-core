@@ -22,11 +22,14 @@ module.exports = {
         "func-style": ["error", "expression"],
         "no-console": "error",
         "no-else-return": ["error", {allowElseIf: false}],
-        "no-empty-function": "error",
+        "no-empty-function": ["error", { "allow": ["arrowFunctions"] }],
         "no-eval": "error",
         "no-var": "error",
         "no-useless-rename": "error",
-        "semi": 2
+        "semi": 2,
+        "no-unused-vars": ["error", {
+            "varsIgnorePattern": "^_"
+        }]
     },
     settings: {
         jsdoc: {

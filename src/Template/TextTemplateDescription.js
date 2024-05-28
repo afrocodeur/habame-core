@@ -9,31 +9,14 @@ import Template from "src/Template/Template";
  */
 const TextTemplateDescription = function($template, $viewProps) {
 
-    const $parts = $template
-        .split(/(\{\{.+?\}\})/)
-        .map((value) => {
-            const hasAState = /(^\{\{.+?\}\}$)/.test(value);
-            return {
-                value: value,
-                hasAState,
-                template: (hasAState ? new Template(value, $viewProps): null)
-            };
-        });
+    let $parts = [];
 
     /** @type {string[]} */
-    const $statesToWatch = $parts.reduce(function(statesToWatch, currentValue) {
-        if(!currentValue.hasAState) {
-            return statesToWatch;
-        }
-        const stateList = currentValue.template.statesToWatch();
-        stateList.forEach((stateName) => {
-           if(!statesToWatch.includes(stateName)) {
-               statesToWatch.push(stateName);
-           }
-        });
-        return statesToWatch;
-    }, []);
+    let $statesToWatch = [];
+    /** @type {string} */
+    let $lastTemplate = null;
 
+    /** @type {boolean} */
     const $stateless = !$parts.some((part) => part.hasAState);
 
     this.isStateLess = function() {
@@ -49,9 +32,46 @@ const TextTemplateDescription = function($template, $viewProps) {
         });
     };
 
+    /**
+     * @param {string} template
+     */
+    this.refresh = function(template) {
+        if(template === $lastTemplate) {
+            return;
+        }
+        $parts = (template || $template)
+            .split(/(\{\{.+?\}\})/)
+            .map((value) => {
+                const hasAState = /(^\{\{.+?\}\}$)/.test(value);
+                return {
+                    value: value,
+                    hasAState,
+                    template: (hasAState ? new Template(value, $viewProps): null)
+                };
+            });
+
+        $statesToWatch = $parts.reduce(function(statesToWatch, currentValue) {
+            if(!currentValue.hasAState) {
+                return statesToWatch;
+            }
+            const stateList = currentValue.template.statesToWatch();
+            stateList.forEach((stateName) => {
+                if(!statesToWatch.includes(stateName)) {
+                    statesToWatch.push(stateName);
+                }
+            });
+            return statesToWatch;
+        }, []);
+        $lastTemplate = template;
+    };
+
     this.statesToWatch = function() {
         return $statesToWatch;
     };
+
+    ((() => {
+        this.refresh($template);
+    })());
 
 };
 

@@ -57,15 +57,14 @@ const State = function($defaultValues = {}) {
             // TODO
             // console.warn("It's not recommended to add a state after initialisation");
         }
+        if($stateItems[stateName]) {
+            return $stateItems[stateName];
+        }
         const stateItem = new StateItem(stateValue, this);
 
         // If this state change, let's inform all concerned listeners
         stateItem.onUpdate(() => triggerStateItems([stateName]));
         $stateItems[stateName] = stateItem;
-
-        if(typeof this[stateName] === 'function') {
-            return stateItem;
-        }
 
         Object.defineProperty(this, stateName, {
             configurable: true,
@@ -223,7 +222,7 @@ const State = function($defaultValues = {}) {
     };
 
     /**
-     * @return {Object.<string, *>}
+     * @returns {Object.<string, *>}
      */
     this.getAll = function() {
         return this.getValues(this.getStateNames());
@@ -266,7 +265,8 @@ const State = function($defaultValues = {}) {
      */
     this.onUpdate = function(names, listener, isToHandleFirst = false) {
         const notFoundStateNames = names.filter((name) => !this.exists(name));
-        isToHandleFirst ? $listeners.unshift({ names, listener }) : $listeners.push({ names, listener });
+        const item = { names, listener, remove: false };
+        isToHandleFirst ? $listeners.unshift(item) : $listeners.push(item);
         if(notFoundStateNames.length === 0) {
             return listener;
         }
@@ -292,6 +292,9 @@ const State = function($defaultValues = {}) {
         dependedStates.forEach(({ state, variables}) => {
             const updateDataOptions = { variables, state };
             state.onUpdate(variables, () => {
+                if(item.remove) {
+                    return;
+                }
                 if(!$triggerListenersOptions.enable) {
                     $triggerListenersOptions.listenersToHandle.add(updateDataOptions);
                     return;
@@ -303,9 +306,19 @@ const State = function($defaultValues = {}) {
         return listener;
     };
 
+    this.removeOnUpdateListener = function(listener) {
+        const index  = $listeners.findIndex((item) => item.listener === listener);
+        if(index === -1) {
+            return;
+        }
+        const item = $listeners.splice(index, 1);
+        item.remove = true;
+    };
+
     this.unlock = function() {
         $lock = false;
     };
+
     this.disconnect = function() {
         $listeners.splice(0);
         $triggerListenersOptions.listenersToHandle.clear();

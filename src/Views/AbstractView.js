@@ -1,4 +1,5 @@
 import ViewIfStatement from "src/Views/ViewIfStatement";
+import AbstractViewDev from "./Dev/AbstractViewDev";
 
 /**
  *
@@ -17,25 +18,32 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
     let $ifStatement = null;
 
     const $switchContainers =  {
+        anchorsFragment: document.createDocumentFragment(),
+        anchorParent: null, // the node parent
         selfFragment: document.createDocumentFragment(),
         anchor: null, // the node anchor in the DOM
         parent: null // the node parent
     };
 
-    const buildIfStatement = ()=> {
-        if(!$viewDescription.if) {
-            return;
+    /**
+     * @param {string} ifDescription
+     * @returns {?ViewIfStatement}
+     */
+    const buildIfStatement = (ifDescription)=> {
+        if(!ifDescription) {
+            return null;
         }
         if($ifStatement) {
-            return;
+            return null;
         }
-        $ifStatement = new ViewIfStatement($viewDescription.if, $viewProps);
+        $ifStatement = new ViewIfStatement(ifDescription, $viewProps);
         $ifStatement.watch((isTrue) => {
             if($viewProps.localState) {
                 (!isTrue) ? $viewProps.localState.switchOff() : $viewProps.localState.switchOn();
             }
             (isTrue) ? this.mount() : this.unmount();
         });
+        return $ifStatement;
     };
 
     /**
@@ -46,7 +54,7 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
             return;
         }
         if($isFragment !== true) {
-            buildIfStatement();
+            buildIfStatement($viewDescription.if);
         }
         this.beforeRenderProcess ? this.beforeRenderProcess() : null;
         this.renderProcess(parentNode, $ifStatement);
@@ -67,7 +75,7 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
         targetNode.parentNode.insertBefore(nodeToInsert, nextElement);
     };
 
-    this.mount = function() {
+    this.mount = function( ) {
         if(!$viewState.isUnmount) {
             return;
         }
@@ -77,14 +85,17 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
         this.mountProcess($ifStatement);
     };
 
-    this.unmount = function() {
+    /**
+     * @param {boolean} full
+     */
+    this.unmount = function(full = false) {
         if($viewState.isUnmount) {
             return;
         }
         if(!this.unmountProcess) {
             return;
         }
-        this.unmountProcess();
+        this.unmountProcess(full);
     };
 
     this.remove = function() {
@@ -106,6 +117,10 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
     };
 
     this.setIsRemoved = function() {
+        $viewState.isRemoved = true;
+    };
+
+    this.setIsNotRemoved = function() {
         $viewState.isRemoved = false;
     };
 
@@ -122,7 +137,7 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
     };
 
     /**
-     * @param {HTMLElement} parentNode
+     * @param {HTMLElement?} parentNode
      */
     this.setParent = function(parentNode) {
         $switchContainers.parent = parentNode;
@@ -133,6 +148,27 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
      */
     this.setAnchor = function(anchorNode) {
         $switchContainers.anchor = anchorNode;
+    };
+
+    /**
+     * @param {HTMLElement | DocumentFragment} parent
+     * @param {HTMLElement | DocumentFragment | Text | Comment | (HTMLElement | DocumentFragment | Text | Comment)[]} node
+     */
+    this.unmountAnchors = function(parent, node) {
+        $switchContainers.anchorParent = parent;
+        if(Array.isArray(node)) {
+            node.forEach((nodeItem) => {
+                $switchContainers.anchorsFragment.appendChild(nodeItem);
+            });
+            return;
+        }
+        $switchContainers.anchorsFragment.appendChild(node);
+    };
+    this.mountAnchors = function() {
+        if($switchContainers.anchorParent) {
+            $switchContainers.anchorParent.appendChild($switchContainers.anchorsFragment);
+        }
+        $switchContainers.anchorParent = null;
     };
 
     /**
@@ -148,8 +184,11 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
         $switchContainers.selfFragment.appendChild(node);
     };
 
-    this.moveIntoParent = function() {
-        if($switchContainers.parent) {
+    /**
+     * @param {boolean} isForceAppend
+     */
+    this.moveIntoParent = function(isForceAppend = false) {
+        if($switchContainers.parent || isForceAppend) {
             $switchContainers.parent.appendChild($switchContainers.selfFragment);
             return;
         }
@@ -171,6 +210,15 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
     };
 
     this.updateViewDescription = () => {};
+    this.updateIfControl = () => {};
+
+    AbstractViewDev.apply(this, [{
+        $viewDescription,
+        $callbacks: {
+            getIfStatement: () => $ifStatement,
+            buildIfStatement
+        }
+    }]);
 
 };
 

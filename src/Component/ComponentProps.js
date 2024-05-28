@@ -7,13 +7,41 @@
  */
 const ComponentProps = function($propTemplates = {}, $slots = {}) {
 
+    /**
+     * @param {string} propName
+     */
+    const updatePropValue = (propName) => {
+        this[propName] = $propTemplates[propName].value();
+    };
+
     const updatePropsValues = () => {
         for (const propName in $propTemplates) {
-            if(propName === 'onUpdate') {
+            if(['onUpdate', 'all', 'getSlot'].includes(propName)) {
                 continue;
             }
-            this[propName] = $propTemplates[propName].value();
+            updatePropValue(propName);
         }
+    };
+
+    /**
+     * @param {string} propName
+     * @returns {boolean}
+     */
+    this.exists = function(propName) {
+        return Object.keys($propTemplates).includes(propName);
+    };
+
+    /**
+     * @param {string} propName
+     * @param {Template} template
+     */
+    this.add = function(propName, template) {
+        if(this.exists(propName)) {
+            return;
+        }
+        $propTemplates[propName] = template;
+        template.onUpdate(updatePropsValues);
+        updatePropValue(propName);
     };
 
     /**
@@ -45,6 +73,21 @@ const ComponentProps = function($propTemplates = {}, $slots = {}) {
      */
     this.getSlot = function(name) {
         return $slots ? $slots[name] : null;
+    };
+
+    /**
+     * @param {Object.<string, Function>} slots
+     */
+    this.updateSlots = function(slots) {
+        $slots = slots;
+    };
+
+    /**
+     * @param {string} propName
+     * @returns {Template}
+     */
+    this.getTemplate = function(propName) {
+        return $propTemplates[propName];
     };
 
     ((() => { /* constructor */

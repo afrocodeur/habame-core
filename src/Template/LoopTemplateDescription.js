@@ -21,8 +21,10 @@ const LoopTemplateDescription = function($loopExpression, $viewProps) {
     /** @type {?Template} */
     let $iterableTemplate = null;
 
-    /** @type {?LoopTemplateDescription} */
+    /** @type {?AbstractLoopExpressionHandler} */
     let $loopExpressionDescription = null;
+    /** @type {?string} */
+    let $lastExpression = null;
 
 
     // Todo : get source data
@@ -35,6 +37,9 @@ const LoopTemplateDescription = function($loopExpression, $viewProps) {
         return $iterableTemplate.value();
     };
 
+    /**
+     * @returns {?AbstractLoopExpressionHandler}
+     */
     this.expressionDescription = function() {
         return $loopExpressionDescription;
     };
@@ -49,19 +54,34 @@ const LoopTemplateDescription = function($loopExpression, $viewProps) {
         return listener;
     };
 
-    ((() => { /* Constructor */
-        $loopExpression = $loopExpression.trim().replace(/[\s]+/, ' ');
+    /**
+     * @param {string} expression
+     */
+    this.refresh = function(expression) {
+        if(expression === $lastExpression) {
+            return;
+        }
+        expression = expression.trim().replace(/[\s]+/, ' ');
         for (const LoopHandler of LOOP_TEMPLATE_HANDLERS) {
             const handler = new LoopHandler();
-            if(handler.test($loopExpression)) {
-                handler.setExpression($loopExpression);
+            if(handler.test(expression)) {
+                handler.setExpression(expression);
                 $loopExpressionDescription = handler;
-                $iterableTemplate = new Template($loopExpressionDescription.getIterableFullName(), $viewProps);
+                if(!$iterableTemplate) {
+                    $iterableTemplate = new Template($loopExpressionDescription.getIterableFullName(), $viewProps);
+                } else {
+                    $iterableTemplate.refresh($loopExpressionDescription.getIterableFullName());
+                }
+                $lastExpression = expression;
                 return;
             }
         }
         // Todo : Improve error
-        throw new Error('Syntax Error : ' + $loopExpression);
+        throw new Error('Syntax Error : ' + expression);
+    };
+
+    ((() => { /* Constructor */
+        this.refresh($loopExpression);
     })());
 
 };

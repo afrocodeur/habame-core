@@ -28,6 +28,7 @@ const ViewElementFragment = function($viewDescription, $viewProps) {
     /**
      * @param {string|Array|Object} element
      * @param {string[]} ifStatements
+     * @returns {ViewElementFragment}
      */
     const handleViewDescriptionElement = function(element, ifStatements) {
         if(typeof element === 'string') {
@@ -71,13 +72,16 @@ const ViewElementFragment = function($viewDescription, $viewProps) {
         }
     };
 
+    /**
+     * @param {string|Array|Object} viewDescription
+     */
     const buildViewDescription = function(viewDescription) {
         if(typeof  viewDescription === 'string') {
             const node = new ViewTextElement(viewDescription, $viewProps);
             $fragmentElements.push(node);
             return;
         }
-        if(typeof $viewDescription !== 'object') {
+        if(typeof viewDescription !== 'object') {
             return;
         }
         if(viewDescription.repeat) {
@@ -131,16 +135,25 @@ const ViewElementFragment = function($viewDescription, $viewProps) {
         }
     };
 
-    this.unmountProcess = function() {
+    /**
+     * @param {boolean} full
+     */
+    this.unmountProcess = function(full) {
         for(const fragmentElement of $fragmentElements) {
-            fragmentElement.unmount();
+            fragmentElement.unmount(full);
         }
         this.setIsUnmounted();
     };
 
-    this.mountProcess = function(force = false) {
+    /**
+     * @param {ViewIfStatement} ifStatement
+     */
+    this.mountProcess = function(ifStatement) {
+        if(ifStatement && ifStatement.isFalse()) {
+            return;
+        }
         for(const fragmentElement of $fragmentElements) {
-            fragmentElement.mount(force);
+            fragmentElement.mount();
         }
         this.setIsMounted();
     };
@@ -156,12 +169,17 @@ const ViewElementFragment = function($viewDescription, $viewProps) {
         $fragmentElements,
         $callbacks: {
             handleViewDescriptionElement,
+            buildViewDescription,
             getParentNode: () => $parentNode
         },
     }]);
 
 };
 
+/**
+ * @param {string} statementTemplate
+ * @returns {string}
+ */
 const cleanConditionStatement = function(statementTemplate) {
     if(/^\(/.test(statementTemplate) && /\)$/.test(statementTemplate)) {
         return statementTemplate;

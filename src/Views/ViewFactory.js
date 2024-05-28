@@ -12,6 +12,11 @@ import xmlEngine from "../Engines/xmlEngine";
 const ViewFactory =  function($viewDescription, $appInstance, $options) {
     let $view = $viewDescription;
 
+    /**
+     *
+     * @param {string|Object} view
+     * @returns {Object|string|Array|*}
+     */
     const applyViewEngines = (view) => {
         if($options && $options.engines) {
             const engines = (typeof $options.engines === 'string') ? [$options.engines] : $options.engines;
@@ -36,6 +41,10 @@ const ViewFactory =  function($viewDescription, $appInstance, $options) {
         return new View($view, $appInstance);
     };
 
+    /**
+     * @param {string|Array|Object} viewDescription
+     * @returns {string|Array|Object}
+     */
     this.updateViewDescription = function(viewDescription) {
         $view = applyViewEngines(viewDescription);
         return $view;
