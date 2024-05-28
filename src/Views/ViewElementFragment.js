@@ -76,6 +76,9 @@ const ViewElementFragment = function($viewDescription, $viewProps) {
      * @param {string|Array|Object} viewDescription
      */
     const buildViewDescription = function(viewDescription) {
+        if(!viewDescription) {
+            return;
+        }
         if(typeof  viewDescription === 'string') {
             const node = new ViewTextElement(viewDescription, $viewProps);
             $fragmentElements.push(node);
