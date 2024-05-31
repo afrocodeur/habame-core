@@ -6,7 +6,7 @@ import Component from 'src/Component/Component';
  * @param {string} $name
  * @param {Function} $controller
  * @param {string|Array|Object} $viewDescription
- * @param {{ engines: string[], disableXmlEngine: boolean }} $options
+ * @param {?{ engines?: string|string[], disableXmlEngine?: boolean }} $options
  *
  * @class
  */

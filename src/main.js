@@ -64,7 +64,7 @@ const Habame = (function(){
          * @param {string} name
          * @param {Function} controller
          * @param {string|Array|Object} view
-         * @param {{ engines: string|string[], disableXmlEngine: boolean }} options
+         * @param {?{ engines?: string|string[], disableXmlEngine?: boolean }} options
          *
          * @returns {ComponentFactory}
          */
@@ -77,10 +77,10 @@ const Habame = (function(){
         /**
          * @param {string} name
          * @param {Function} service
-         * @param {{ isUniqueInstance?: boolean, params: *[] }} options
+         * @param {?{ isUniqueInstance?: boolean, params?: *[] }} options
          */
         createService: function(name, service, options ){
-            const serviceWrapper = new ServiceWrapper(service, options);
+            const serviceWrapper = new ServiceWrapper(service, options || {});
             $services[name] = serviceWrapper;
             Object.defineProperty(Habame.Services, name, {
                 get() {

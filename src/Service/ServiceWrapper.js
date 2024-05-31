@@ -3,7 +3,7 @@ import State from "../State/State";
 /**
  *
  * @param {Function} $service
- * @param {{ isUniqueInstance: boolean, params: *[] }} $options
+ * @param {{ isUniqueInstance?: boolean, params?: *[] }} $options
  *
  * @class
  */

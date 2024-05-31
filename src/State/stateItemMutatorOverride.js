@@ -22,8 +22,11 @@ const stateItemMutatorOverride = function($value, $stateItem) {
         mutators = $value.MUTATORS || mutators;
     }
 
+    $value.ORIGINAL_METHODS = $value.ORIGINAL_METHODS || {};
+
     mutators.forEach((methodName) => {
-        const nativeMethod = $value[methodName];
+        const nativeMethod = $value.ORIGINAL_METHODS[methodName] || $value[methodName];
+
         $value[methodName] = function() {
             const result = nativeMethod.apply($value, Array.from(arguments));
             $stateItem.trigger();
