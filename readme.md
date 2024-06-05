@@ -97,7 +97,7 @@ const root = Habame.createRoot(document.getElementById('app'));
 root.render(App);
 ```
 
-- In this case, name will empty and will never update
+- In this case, count will empty and will never update
 ```js
     Habame.createComponent('NbClick', function() {}, `<div >You click {{ count }} time.s</div>`);
 ```
@@ -130,6 +130,43 @@ root.render(App);
     }, `<div >You click {{ count }} time.s</div>`);
 ```
 
+
+### Events
+use HbEvent to make a communication between parent and child component 
+
+```js
+Habame.createComponent('CustomCountButton', function({ HbEvent, Actions }) {
+
+    const onClick = HbEvent.create('onClick');
+
+    Actions.emitTheClick = function() {
+        onClick.emit();
+    };
+
+},
+`
+    <button events.click="emitTheClick" >Click me!</button>
+`);
+
+const App = Habame.createComponent('App', function({ State, Actions }) {
+
+    State.init({
+        count: 0
+    });
+
+    Actions.eventFromChild = function() {
+        State.count++;
+    };
+
+},
+`
+    <div>
+        {{ count }} nb click
+        <br/><br/>
+        <CustomCountButton events.onClick="eventFromChild" />
+    </div>
+`);
+```
 
 ### Element Reference
 
@@ -440,5 +477,65 @@ const App = Habame.createComponent('App', function({ State, Actions }) {
 `
  <div if="user.lastname" >hello {{ user.lastname }} {{ user.firstname }}</div>
  <button events.click = 'changeToJhon' >Change to Jhon do</button>
+`);
+```
+
+
+### Use App to make communication between component
+`App` is the instance of you rootApp which contain his own event handler and state handler
+
+```js
+Habame.createComponent('MyComponent', function({ App }) {
+    
+    const appEvent = App.getEvent(); // will return the app HbEvent
+    const state = App.getState(); // will return the app State
+    
+}, ``);
+```
+
+example with app event
+
+```js
+Habame.createComponent('Notifications', function({ App, State }) {
+
+    State.init({ notifications: [] });
+
+    App.getEvent().addEventListener('push-notification', function(notification) {
+        State.notifications.push(notification);
+
+        setTimeout(() => {
+            console.log('rien a dire');
+            State.notifications.shift();
+        }, 3000);
+    });
+
+},
+`
+    <div class="notifications-container" >
+        <div class="notification-container" repeat="notifications as notification" >
+            {{ notification.message }}
+        </div>
+    </div>
+`);
+
+
+const App = Habame.createComponent('App', function({ App, State, Actions }) {
+
+    State.init({
+        count: 0
+    });
+    let countNotifications = 0;
+
+    Actions.sendNotification = function() {
+        App.getEvent().emit('push-notification', [{ message: 'Add new notification ' + (++countNotifications) }]);
+    };
+
+},
+`
+    <div>
+        <Notifications />
+        <br/><br/>
+        <button events.click="sendNotification" >Send notification</button>
+    </div>
 `);
 ```
