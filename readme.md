@@ -175,11 +175,11 @@ Reference will allow you to get element from view (html element or component)
 - get html element
 ```js
 
-const App = Habame.createComponent('App', function({ State, Actions, Ref }) {
+const App = Habame.createComponent('App', function({ State, Actions, Refs }) {
     State.init({ value: 0, square: 0 });
 
     Actions.calculate = function() {
-        const target = Ref.input.target();
+        const target = Refs.input.target();
         State.value = Number(target.value);
         State.square = State.value * State.value;
     };
@@ -213,10 +213,10 @@ Habame.createComponent('SwitchButton', function({ State }) {
     <div >{{ isOn ? 'Button is on' : 'Button is off' }}</div>
 `);
 
-const App = Habame.createComponent('App', function({ Actions, Ref }) {
+const App = Habame.createComponent('App', function({ Actions, Refs }) {
 
     Actions.togglePlayer = function() {
-        const switchButton = Ref.switchButton.target();
+        const switchButton = Refs.switchButton.target();
         switchButton.toggle();
     };
 
@@ -236,10 +236,10 @@ const App = Habame.createComponent('App', function({ Actions, Ref }) {
  collection of ref work only for loop context, `ref` and `repeat` must be define the same tag
 
 ```js
-const App = Habame.createComponent('App', function({ Actions, Ref }) {
+const App = Habame.createComponent('App', function({ Actions, Refs }) {
 
     Actions.togglePlayer = function() {
-        Ref.switchButton.each((button) => {
+        Refs.switchButton.each((button) => {
             button.target().toggle();
         });
     };
@@ -288,11 +288,11 @@ const App = Habame.createComponent('App', function() {},
   - `iterable as (index, value)`
 
 ```js
-const App = Habame.createComponent('App', function({ State, Actions, Ref }) {
+const App = Habame.createComponent('App', function({ State, Actions, Refs }) {
     State.add('products', []);
 
     Actions.addProduct = function() {
-        const target = Ref.input.target();
+        const target = Refs.input.target();
         State.products.push(target.value);
         target.value = '';
         target.focus();
@@ -346,7 +346,7 @@ const App = Habame.createComponent('App', function({ State, Actions }) {
 ### Create a service
 
 ```js
-Habame.createService('productService', function(State) {
+Habame.createService('ProductService', function(State) {
     State.add('productList', []);
 
     this.addProduct = function(name, price) {
@@ -355,12 +355,12 @@ Habame.createService('productService', function(State) {
 
 }, { isUniqueInstance: true }); // use isUniqueInstance to share the same instance of service among applicaton component
 
-Habame.createComponent('ProductForm', function({ Actions, Ref }) {
-    const productService = Habame.Services.productService;
+Habame.createComponent('ProductForm', function({ Actions, Refs }) {
+    const productService = Habame.Services.ProductService;
 
     Actions.addProduct = function() {
-        const nameInput = Ref.name.target();
-        const priceInput = Ref.price.target();
+        const nameInput = Refs.name.target();
+        const priceInput = Refs.price.target();
         productService.addProduct(nameInput.value, priceInput.value);
         nameInput.value = '';
         priceInput.value = '';
@@ -504,7 +504,6 @@ Habame.createComponent('Notifications', function({ App, State }) {
         State.notifications.push(notification);
 
         setTimeout(() => {
-            console.log('rien a dire');
             State.notifications.shift();
         }, 3000);
     });

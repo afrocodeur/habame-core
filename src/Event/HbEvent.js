@@ -68,6 +68,8 @@ const HbEvent = function () {
         return listener;
     };
 
+    this.on = this.addEventListener;
+
     /**
      * @param {string} name
      * @param {Function} listenerToRemove

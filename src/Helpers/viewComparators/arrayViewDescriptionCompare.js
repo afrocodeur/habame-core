@@ -24,8 +24,10 @@ const getExistingElement = function(newDescription, newDescriptionIndex, element
         if(description.component && (description.component === newDescription.component)) {
             return true;
         }
+        const {content: _,  ...descriptionWithoutContent} = description;
+        const {content: __,  ...newDescriptionWithoutContent} = newDescription;
 
-        return description.name && (description.name === newDescription.name);
+        return JSON.stringify(descriptionWithoutContent) === JSON.stringify(newDescriptionWithoutContent);
     });
 
     return {
@@ -43,9 +45,10 @@ const getExistingElement = function(newDescription, newDescriptionIndex, element
 const arrayViewDescriptionCompare = function(newViewDescription, oldViewDescription, elements) {
     const diff = [];
     let oldElements = [...elements];
+    const oldDescription = [...oldViewDescription];
 
     newViewDescription.forEach((newDescription, index) => {
-        if(newDescription === oldViewDescription[index]) {
+        if(newDescription === oldDescription[index]) {
             diff.push({ node: elements[index], viewDescription: null });
             return;
         }

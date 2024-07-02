@@ -21,26 +21,27 @@ const ViewRefCollection = function() {
      * @param {Number} index
      * @returns {*}
      */
-    this.target = function(index) {
-        if(!$references[index]) {
-            return null;
-        }
-        return $references[index].target();
+    this.get = function(index) {
+        return $references[index]?.target();
     };
 
-    /**
-     * @param {Number} index
-     * @returns {*}
-     */
-    this.get = function(index) {
-        return $references[index];
+    this.props = function(name) {
+        const values = [];
+
+        this.each(function(target) {
+            values.push(target ? target[name] : undefined);
+        });
+
+        return values;
     };
 
     /**
      * @param {Function} callback
      */
     this.each = function(callback) {
-        $references.forEach(callback);
+        $references.forEach(function(reference) {
+            callback(reference.target());
+        });
     };
 
 };

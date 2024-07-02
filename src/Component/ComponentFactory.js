@@ -1,5 +1,6 @@
 import ViewFactory from "src/Views/ViewFactory";
 import Component from 'src/Component/Component';
+import Helper from "../Helpers/Helper";
 
 /**
  *
@@ -65,9 +66,13 @@ const ComponentFactory = function($name, $controller, $viewDescription, $options
      */
     this.updateView = function(viewDescription) {
         $sources.view = viewDescription;
+        if(!$viewFactory) {
+            return;
+        }
         const viewDescriptionTransformed = $viewFactory.updateViewDescription(viewDescription);
         $instances.forEach(({ view }) => {
-            view.updateViewDescription(viewDescriptionTransformed);
+            const vue = typeof viewDescriptionTransformed === 'string' ? viewDescriptionTransformed : Helper.clone(viewDescriptionTransformed);
+            view?.updateViewDescription(viewDescriptionTransformed);
         });
     };
 

@@ -12,7 +12,7 @@ import Template from "../../Template/Template";
  */
 const ViewComponentElementDev = function({ $viewDescription, $componentEventActions, $viewProps, $slotManagers, $callbacks  }) {
 
-    const { getProps, getHbEvent, buildEvent, getSlotManagerObject } = $callbacks;
+    const { getProps, getElement, getHbEvent, buildEvent, getSlotManagerObject } = $callbacks;
 
     /**
      * @param {Object.<string, string>} props
@@ -32,14 +32,20 @@ const ViewComponentElementDev = function({ $viewDescription, $componentEventActi
             }
         });
 
+        const componentState = getElement().getState();
+        const propsToRefresh = [];
         for(const propName in props) {
             if(componentProps.exists(propName)) {
-                componentProps.getTemplate(propName).refresh(props[propName], true);
+                propsToRefresh.push(propName);
                 continue;
             }
-            const template = new Template($viewDescription.props[propName], $viewProps);
+            const template = new Template(props[propName], $viewProps);
             componentProps.add(propName, template);
+            componentState.useProps(componentProps, [propName]);
         }
+        propsToRefresh.forEach(function(propName) {
+            componentProps.getTemplate(propName).refresh(props[propName], true);
+        });
     };
 
     /**

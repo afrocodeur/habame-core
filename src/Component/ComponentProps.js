@@ -53,7 +53,21 @@ const ComponentProps = function($propTemplates = {}, $slots = {}) {
             throw new Error('undefined props ' + name);
         }
         $propTemplates[name].onUpdate(listener);
+        return {
+            disconnect: function() {
+                $propTemplates[name].disconnect(listener);
+            }
+        };
     };
+
+    /**
+     * @param {string} name
+     * @param {Function} listener
+     */
+    this.disconnect = function(name, listener) {
+        $propTemplates[name]?.disconnect(listener);
+    };
+
 
     /**
      * @returns {Object.<string, *>}

@@ -93,6 +93,9 @@ const Template = function($template, $viewProps, $isWithTry = false, $catchValue
      * @returns {*}
      */
     this.value = function(valuesToUse) {
+        if(!$templateFunction) {
+            return undefined;
+        }
         // TODO : get the value evaluated by the template manager
         const states = {};
         for (const name of requestedVariablesNames) {
@@ -105,7 +108,7 @@ const Template = function($template, $viewProps, $isWithTry = false, $catchValue
                 states[name] = state.value();
             }
         }
-        return $templateFunction ? $templateFunction(states) : undefined;
+        return $templateFunction(states);
     };
 
     /**
@@ -122,6 +125,11 @@ const Template = function($template, $viewProps, $isWithTry = false, $catchValue
 
         if(cleanState === true && $viewProps.localState) {
             $viewProps.localState.disconnect();
+        }
+        if(!sourceTemplate) {
+            $lastTemplate.source = sourceTemplate;
+            $templateFunction = null;
+            return;
         }
 
         let template = sourceTemplate.trim().replace(/^\{\{|}}$/g, '').trim();

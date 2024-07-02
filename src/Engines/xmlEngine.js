@@ -11,6 +11,10 @@ const FRAGMENT_ACCEPTED_NAMES = ['fragment', 'habame'];
  */
 const xmlEngine = function(viewTemplate) {
 
+    if(viewTemplate === '') {
+        return { content: '' };
+    }
+
     const view = [];
     let parsedDocument = viewTemplate;
     if(!(viewTemplate instanceof Document)) {
@@ -75,6 +79,9 @@ const xmlNodeToJson =  function(nodeElement) {
         const elementChildren = [];
         const slots = [];
         Array.from(nodeElement.childNodes).forEach((nodeChild) => {
+            if(nodeChild instanceof Comment) {
+                return;
+            }
             const child = xmlNodeToJson(nodeChild);
             if(child.name === SLOT_DEFINITION_TAG_NAME) {
                 if(!child.attrs.name) {

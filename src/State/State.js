@@ -23,6 +23,7 @@ const State = function($defaultValues = {}) {
         enable: true,
         listenersToHandle: new Set()
     };
+    const $propsUsed = { props: null, callbacks: {} };
 
     let $lock = false;
 
@@ -109,25 +110,46 @@ const State = function($defaultValues = {}) {
      * Connect the component state to its props
      *
      * @param {ComponentProps} props
-     * @param {?string[]} only
+     * @param {string[]} only
      */
-    this.useProps = function(props, only) {
+    this.useProps = function(props, only= null) {
         if(!(props instanceof ComponentProps)) {
             throw new Error('State.useProps require a ComponentProps instance');
         }
+        $propsUsed.props = props;
         const propsValues = props.all();
         for (const propName in propsValues) {
             if(Array.isArray(only) && !only.includes(propName)) {
                 continue;
             }
+            if($propsUsed.callbacks[propName]) {
+                return;
+            }
             const stateItem = this.add(propName, propsValues[propName]);
-            props.onUpdate(propName, (value, oldValue) => {
+            $propsUsed.callbacks[propName] = props.onUpdate(propName, (value, oldValue) => {
                 stateItem.set(value);
                 if(value === oldValue) {
                     stateItem.trigger();
                 }
             });
         }
+    };
+
+    /**
+     * @param {string[]} names
+     */
+    this.disconnectProps = function(names) {
+        if(!$propsUsed) {
+            return;
+        }
+        let namesToDisconnect = [...names];
+        if(!names  || names.length === 0) {
+            const propsValues = $propsUsed.props.all();
+            namesToDisconnect = Object.keys(propsValues);
+        }
+        namesToDisconnect.forEach(function(name ) {
+            $propsUsed.callbacks[name] && $propsUsed.callbacks[name].disconnect();
+        });
     };
 
     /**

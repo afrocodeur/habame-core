@@ -36,6 +36,7 @@ const View = function($viewDescription, $appInstance) {
 
     /** @type {Object.<string, (Object.<string, Function>)|ViewRefCollection>} */
     const $references = {};
+    const $referenceStore = {};
 
     /** @type  {?Component} */
     let $componentInstance = null;
@@ -114,11 +115,25 @@ const View = function($viewDescription, $appInstance) {
      */
     this.setReference = function(name, viewElement) {
         const refInstance = getSafeNode(viewElement);
-        if($references[name] instanceof ViewRefCollection) {
-            $references[name].push(refInstance);
+        if($referenceStore[name] instanceof ViewRefCollection) {
+            $referenceStore[name].push(refInstance);
+            if($references[name] === undefined) {
+                Object.defineProperty($references, name, {
+                    get: function() {
+                        return $referenceStore[name];
+                    }
+                });
+            }
             return;
         }
-        $references[name] = refInstance;
+        $referenceStore[name] = refInstance;
+        if($references[name] === undefined) {
+            Object.defineProperty($references, name, {
+                get: function() {
+                    return $referenceStore[name]?.target();
+                }
+            });
+        }
     };
     /**
      * @param {string} name
@@ -126,14 +141,14 @@ const View = function($viewDescription, $appInstance) {
      */
     this.cleanReference = function(name, isCollection) {
         if(isCollection === true) {
-            if($references[name] instanceof ViewRefCollection) {
-                $references[name].clean();
+            if($referenceStore[name] instanceof ViewRefCollection) {
+                $referenceStore[name].clean();
                 return;
             }
-            $references[name] = new ViewRefCollection();
+            $referenceStore[name] = new ViewRefCollection();
             return;
         }
-        $references[name] = undefined;
+        $referenceStore[name] = undefined;
     };
 
     this.getReferences = function() {
@@ -143,6 +158,10 @@ const View = function($viewDescription, $appInstance) {
     this.getComponentInstance = function() {
         return $componentInstance;
     };
+
+    this.getAnchor = function() {
+        return $viewAnchor;
+    }
 
     ViewDev.apply(this, [{
         $viewFragment,

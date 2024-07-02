@@ -1,5 +1,6 @@
 import View from "src/Views/View";
 import xmlEngine from "../Engines/xmlEngine";
+import Helper from "../Helpers/Helper";
 
 /**
  *
@@ -38,7 +39,8 @@ const ViewFactory =  function($viewDescription, $appInstance, $options) {
     };
 
     this.create = function() {
-        return new View($view, $appInstance);
+        const view = (typeof $view === 'string') ? $view : Helper.clone($view);
+        return new View(view, $appInstance);
     };
 
     /**

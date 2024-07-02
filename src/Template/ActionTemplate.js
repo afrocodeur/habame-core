@@ -62,8 +62,18 @@ const ActionTemplate = function($template, $viewProps) {
         }
     };
 
-    ((function() { // constructor
+    ((() => { // constructor
         $self.refresh($template);
+        const callback = () => {
+            if($actions[$template]) {
+                $lastTemplate = null;
+                this.refresh($template);
+                $viewProps.componentInstance.removeControllerUpdatedListener(callback);
+            }
+        };
+        if(!$actions[$template]) {
+            $viewProps.componentInstance.onControllerUpdated(callback);
+        }
     })());
 };
 

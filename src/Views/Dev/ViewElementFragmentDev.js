@@ -48,17 +48,29 @@ const ViewElementFragmentDev = function({ $viewDescription, $fragmentElements, $
         }
         if(Array.isArray(viewDescription)) {
             // Todo: compare two object and extract the différence
+            if(!Array.isArray($viewDescription)) {
+                $viewDescription = [];
+            }
             const differences = ViewDescriptionCompare.array(viewDescription, $viewDescription, $fragmentElements);
-            $fragmentElements.forEach((element) => {
+            $viewDescription.splice(0);
+            $viewDescription.push(...viewDescription);
+            const nodesToRemove = [];
+            $fragmentElements.forEach((element, index) => {
                 element.unmount(true);
                 const isNotRemoved = differences.find((item) => {
                     return item?.node === element;
                 });
-                // TODO: remove element who are not in the new fragment elements
                 if(!isNotRemoved) {
                     element.remove();
+                    nodesToRemove.push(element);
                 }
             });
+
+            nodesToRemove.forEach((elementToRemove) => {
+                const index = $fragmentElements.findIndex((element) => element === elementToRemove);
+                $fragmentElements.splice(index, 1);
+            });
+
             const ifStatements = [];
             differences.forEach((item) => {
                 if(item?.node && item.node instanceof ViewElementFragment) {
@@ -73,12 +85,12 @@ const ViewElementFragmentDev = function({ $viewDescription, $fragmentElements, $
             });
             return;
         }
-        if(viewDescription.component) {
-            firstElement.updateViewDescription(viewDescription);
+        if(!viewDescription) {
             return;
         }
-        firstElement.updateViewDescription(viewDescription);
-        // TODO: Html node
+        $fragmentElements.forEach(() => {
+            firstElement.updateViewDescription(viewDescription);
+        });
     };
 
 };

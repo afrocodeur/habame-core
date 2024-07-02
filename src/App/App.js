@@ -5,10 +5,11 @@ import ComponentFactory from "src/Component/ComponentFactory";
 
 /**
  * @param {HTMLElement} htmlNodeElement
+ * @param {Habame} Habame
  *
  * @class
  */
-const App = function(htmlNodeElement) {
+const App = function(htmlNodeElement, Habame) {
 
     const $event = new HbEvent();
     const $state = new State();
@@ -52,6 +53,14 @@ const App = function(htmlNodeElement) {
 
     this.getState = function() {
         return $state;
+    };
+
+    /**
+     * @param {string} name
+     * @returns {?App}
+     */
+    this.getApp = function(name) {
+        return Habame.getApp(name);
     };
 
     /**

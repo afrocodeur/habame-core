@@ -2,6 +2,8 @@ import State from "src/State/State";
 import HbEvent from "src/Event/HbEvent";
 import Lifecycle from "src/Component/Lifecycle";
 import LifecycleHandler from "src/Component/LifecycleHandler";
+import ComponentDev from "./Dev/ComponentDev";
+import ComponentProps from "./ComponentProps";
 
 /**
  *
@@ -35,9 +37,15 @@ const Component = function($name, $view, $controller, $props, $appInstance) {
     $state.parent = $appInstance.getState();
     $state.App = $appInstance.getState();
 
-    const $componentRequirements = { App: $appInstance, Actions: $actions, HbEvent: $event, State: $state, Props: $props,  Lifecycle: $lifecycle, Ref: $refs };
+    if($props instanceof ComponentProps) {
+        $state.useProps($props);
+    }
 
-    const $publicFunctions = $controller($componentRequirements);
+    const $componentRequirements = { App: $appInstance, Actions: $actions, HbEvent: $event, State: $state, Props: $props,  Lifecycle: $lifecycle, Refs: $refs };
+
+    const $publicFunctions = $controller($componentRequirements, $view);
+
+    ComponentDev.apply(this, [{ $lifecycle, $event, $componentRequirements , $state }])
 
     /**
      * @param {HTMLElement|DocumentFragment} parentNode
@@ -46,6 +54,10 @@ const Component = function($name, $view, $controller, $props, $appInstance) {
         $lifecycleHandler.beforeCreate();
         $view.render(parentNode);
         $lifecycleHandler.created();
+    };
+
+    this.getView = function() {
+        return $view;
     };
 
     this.isRendered = function() {
@@ -127,29 +139,6 @@ const Component = function($name, $view, $controller, $props, $appInstance) {
      */
     this.getPublicMethod = function() {
         return !$publicFunctions ? {} : { ...$publicFunctions };
-    };
-
-    /**
-     * @param {Function} controller
-     */
-    this.updateController = function(controller) {
-        const stateValues = $state.getAll();
-        $lifecycle.clearAll();
-        $event.clearAll();
-        controller($componentRequirements);
-        for(const oldStateName in stateValues) {
-            if($state.exists(oldStateName)) {
-                const value = $state.get(oldStateName).value();
-                const oldValue = stateValues[oldStateName];
-                if(typeof value !== typeof oldValue) {
-                    continue;
-                }
-                if(Array.isArray(oldValue)) {
-                    continue;
-                }
-                $state.set({ [oldStateName]: stateValues[oldStateName] });
-            }
-        }
     };
 
     ((() => { /* constructor */

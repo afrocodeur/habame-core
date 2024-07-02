@@ -3,6 +3,8 @@ import ComponentFactory from "src/Component/ComponentFactory";
 import DirectiveFactory from "src/Directive/DirectiveFactory";
 import ServiceWrapper from "src/Service/ServiceWrapper";
 
+import stdCore from "./StdCore/index";
+
 const Habame = (function(){
 
     /** @type {Object.<string, ComponentFactory>} */
@@ -14,18 +16,26 @@ const Habame = (function(){
     /** @type {Object.<string, ServiceWrapper>} */
     const $services = {};
 
+    const $apps = {};
+
     let $viewEngines = {};
     let $defaultViewEngine = null;
 
-    return {
+    const HabameCore = {
         Services: {},
         /**
          * @param {HTMLElement} htmlNodeElement
+         * @param {?string} name
          *
          * @returns {App}
          */
-        createRoot: function(htmlNodeElement) {
-            return new App(htmlNodeElement);
+        createRoot: function(htmlNodeElement, name = null) {
+            const app = new App(htmlNodeElement, HabameCore);
+            if(name) {
+                $apps[name] = app;
+            }
+
+            return app;
         },
         /**
          * @param {string} name
@@ -125,8 +135,23 @@ const Habame = (function(){
                 throw new Error('Directive ' + name + ' not found');
             }
             return factory;
+        },
+        /**
+         * @param {string} name
+         * @returns {?App}
+         */
+        getApp: function(name) {
+            return $apps[name];
         }
     };
+
+    const stdCoreItems = Object.values(stdCore);
+    for(const stdCoreItem of stdCoreItems) {
+        (typeof stdCoreItem === 'function') && stdCoreItem(HabameCore);
+    }
+
+    return HabameCore;
 }());
+
 
 export default Habame;
