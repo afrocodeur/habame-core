@@ -68,6 +68,9 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
      */
     this.insertAfter = function(nodeToInsert, targetNode) {
         const nextElement = targetNode.nextSibling;
+        if(!targetNode.parentNode) {
+            return;
+        }
         if(!nextElement) {
             targetNode.parentNode.appendChild(nodeToInsert);
             return;
@@ -89,7 +92,7 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
      * @param {boolean} full
      */
     this.unmount = function(full = false) {
-        if($viewState.isUnmount) {
+        if($viewState.isUnmount && full !== true) {
             return;
         }
         if(!this.unmountProcess) {

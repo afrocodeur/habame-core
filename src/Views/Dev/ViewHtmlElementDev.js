@@ -84,6 +84,7 @@ const ViewHtmlElementDev = function({ $viewDescription, $htmlAttributes, $viewPr
         if(children) {
             children.updateViewDescription(viewDescription.content);
         }
+        $viewDescription.content = viewDescription.content;
     };
 
 };

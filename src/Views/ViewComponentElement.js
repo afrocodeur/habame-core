@@ -143,6 +143,9 @@ const ViewComponentElement = function($viewDescription, $viewProps) {
     this.unmountProcess = function(full) {
         if(full) {
             this.unmountAnchors($viewAnchor.parentNode, $viewAnchor);
+            if(!$componentElement) {
+                return;
+            }
         }
         $componentElement.unmount(full);
         this.setIsUnmounted();

@@ -183,6 +183,9 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
         $lifeCycleHandler.beforeUnmount();
         if(full) {
             this.unmountAnchors($viewAnchor.parentNode, $viewAnchor);
+            if(!$htmlNode) {
+                return;
+            }
         }
         this.moveIntoFragment($htmlNode);
         if($htmlNode instanceof DocumentFragment) {

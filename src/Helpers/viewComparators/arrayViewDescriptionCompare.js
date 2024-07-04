@@ -49,7 +49,7 @@ const arrayViewDescriptionCompare = function(newViewDescription, oldViewDescript
 
     newViewDescription.forEach((newDescription, index) => {
         if(newDescription === oldDescription[index]) {
-            diff.push({ node: elements[index], viewDescription: null });
+            diff.push({ node: elements[index], viewDescription: newDescription });
             return;
         }
         const existingElement = getExistingElement(newDescription, index, oldElements);

@@ -71,11 +71,19 @@ const ViewElementFragmentDev = function({ $viewDescription, $fragmentElements, $
                 $fragmentElements.splice(index, 1);
             });
 
-            const ifStatements = [];
+            let ifStatements = [];
             differences.forEach((item) => {
                 if(item?.node && item.node instanceof ViewElementFragment) {
-                    item.node.mount(true);
-                    item.node.updateViewDescription(item.viewDescription);
+                    item.node.mount();
+                    if(item.viewDescription?.if) {
+                        ifStatements = [item.viewDescription.if]
+                    }
+                    else if(item.viewDescription?.elseif) {
+                        ifStatements.push(item.viewDescription.elseif);
+                    }
+                    if(item.viewDescription) {
+                        item.node.updateViewDescription(item.viewDescription);
+                    }
                     return;
                 }
                 if(item) {
@@ -88,9 +96,7 @@ const ViewElementFragmentDev = function({ $viewDescription, $fragmentElements, $
         if(!viewDescription) {
             return;
         }
-        $fragmentElements.forEach(() => {
-            firstElement.updateViewDescription(viewDescription);
-        });
+        firstElement.updateViewDescription(viewDescription);
     };
 
 };
