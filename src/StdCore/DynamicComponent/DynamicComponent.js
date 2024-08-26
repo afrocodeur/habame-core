@@ -1,6 +1,9 @@
-
+/**
+ * @param {Habame} Habame
+ * @constructor
+ */
 export default function DynamicComponent(Habame) {
-    Habame.createComponent('DynamicComponent', function({ State, Props, App, Lifecycle, Refs }, $view) {
+    Habame.createComponent('DynamicComponent', function({ State, Props, App, Lifecycle }, $view) {
 
         const $componentCache = {};
         const $currentComponent = { component: null, name: null };
@@ -38,4 +41,4 @@ export default function DynamicComponent(Habame) {
         Lifecycle.onCreated(build);
 
     }, ``);
-};
+}

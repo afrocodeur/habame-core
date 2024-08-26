@@ -5,6 +5,8 @@ import ServiceWrapper from "src/Service/ServiceWrapper";
 
 import stdCore from "./StdCore/index";
 
+import HabameRouter from "./StdCore/Router/main";
+
 const Habame = (function(){
 
     /** @type {Object.<string, ComponentFactory>} */
@@ -144,6 +146,8 @@ const Habame = (function(){
             return $apps[name];
         }
     };
+
+    HabameCore.Router = HabameRouter(HabameCore);
 
     const stdCoreItems = Object.values(stdCore);
     for(const stdCoreItem of stdCoreItems) {

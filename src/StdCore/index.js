@@ -1,6 +1,9 @@
-import DynamicComponent from "./Components/DynamicComponent/DynamicComponent";
-
+import DynamicComponent from "./DynamicComponent/DynamicComponent";
+import Link from "./Router/Component/Link";
+import Router from "./Router/Component/Router";
 
 export default {
-    DynamicComponent
+    DynamicComponent,
+    Link,
+    Router
 };

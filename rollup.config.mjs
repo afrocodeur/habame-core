@@ -12,14 +12,14 @@ export default {
     input: 'src/main.js',
     output: [
         {
-            file: 'bin/habame.js',
-            format: 'iife',
+            file: 'dist/habame.js',
+            format: 'umd',
             name: "Habame",
         },
         {
-            file: 'bin/habame.min.js',
+            file: 'dist/habame.min.js',
             format: 'iife',
-            name: "Habame",
+            name: "umd",
             plugins: [terser()]
         }
     ],
@@ -30,6 +30,7 @@ export default {
         alias({
             entries: [
                 { find: 'src', replacement: path.resolve(projectRootDir, 'src') },
+                { find: 'StdCore', replacement: path.resolve(projectRootDir, 'src/StdCore') },
             ]
         })
     ]

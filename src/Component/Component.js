@@ -45,7 +45,7 @@ const Component = function($name, $view, $controller, $props, $appInstance) {
 
     const $publicFunctions = $controller($componentRequirements, $view);
 
-    ComponentDev.apply(this, [{ $lifecycle, $event, $componentRequirements , $state }])
+    ComponentDev.apply(this, [{ $lifecycle, $event, $componentRequirements , $state }]);
 
     /**
      * @param {HTMLElement|DocumentFragment} parentNode
