@@ -64,11 +64,13 @@ export default function Router(Habame) {
 
         Lifecycle.onCreated(() => {
             const historyHandler = routerService.historyHandler();
-            if(historyHandler) {
+            if(historyHandler && typeof historyHandler.getCurrentLocation === 'function') {
                 routerService.push(historyHandler.getCurrentLocation());
                 if(historyHandler instanceof BrowserHistory) {
                     historyHandler.useService(routerService);
                 }
+            }  else {
+                routerService.push('/');
             }
         });
 

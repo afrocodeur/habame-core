@@ -17,7 +17,9 @@ const BrowserHistory = function() {
     };
 
     this.getCurrentLocation = function() {
-        return location.pathname + location.search;
+        const pathname = location.pathname.replace(/\+$/, '')
+            .replace(/^\+/, '');
+        return pathname + location.search;
     };
 
     this.useService = function(routerService) {

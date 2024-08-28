@@ -4671,7 +4671,9 @@
         };
 
         this.getCurrentLocation = function() {
-            return location.pathname + location.search;
+            const pathname = location.pathname.replace(/\+$/, '')
+                .replace(/^\+/, '');
+            return pathname + location.search;
         };
 
         this.useService = function(routerService) {
@@ -4746,11 +4748,13 @@
 
             Lifecycle.onCreated(() => {
                 const historyHandler = routerService.historyHandler();
-                if(historyHandler) {
+                if(historyHandler && typeof historyHandler.getCurrentLocation === 'function') {
                     routerService.push(historyHandler.getCurrentLocation());
                     if(historyHandler instanceof BrowserHistory) {
                         historyHandler.useService(routerService);
                     }
+                }  else {
+                    routerService.push('/');
                 }
             });
 

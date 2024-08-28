@@ -19,7 +19,7 @@ export default {
         {
             file: 'dist/habame.min.js',
             format: 'iife',
-            name: "umd",
+            name: "Habame",
             plugins: [terser()]
         }
     ],
