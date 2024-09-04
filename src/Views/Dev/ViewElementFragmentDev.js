@@ -28,8 +28,11 @@ const ViewElementFragmentDev = function({ $viewDescription, $fragmentElements, $
      * @param {DocumentFragment|ParentNode|HTMLElement} parentNode
      */
     this.updateViewDescription = function(viewDescription, parentNode) {
+        const isViewDescriptionTypeAreDifferent =
+            (typeof $viewDescription !== typeof viewDescription)
+            || (typeof $viewDescription === 'object' && Array.isArray($viewDescription) === Array.isArray(viewDescription));
 
-        if(typeof $viewDescription !== typeof viewDescription) {
+        if(isViewDescriptionTypeAreDifferent) {
             $fragmentElements.forEach((node) => {
                 node.remove();
             });
