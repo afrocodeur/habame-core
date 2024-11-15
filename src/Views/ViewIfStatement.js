@@ -3,7 +3,7 @@ import Template from "src/Template/Template";
 /**
  *
  * @param {string} $ifStatement
- * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+ * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
  *
  *  @class
  */
@@ -41,9 +41,11 @@ const ViewIfStatement = function($ifStatement, $viewProps) {
     };
 
     this.loadStateWatcher = function() {
-        const state = $viewProps.componentInstance.getState();
+        const state = $viewProps.getStateToUse();
+        const stateToWatchNames = $ifTemplate.statesToWatch();
+
         state.removeOnUpdateListener(trigger);
-        state.onUpdate($ifTemplate.statesToWatch(), trigger, true);
+        state.onUpdate(stateToWatchNames, trigger, true);
     };
 
     /**

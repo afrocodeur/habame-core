@@ -7,7 +7,7 @@ import ViewLoopFragmentDev from "./Dev/ViewLoopFragmentDev";
 
 /**
  * @param {Array|Object} $viewDescription
- * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+ * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
  *
  * @class
  * @extends AbstractView
@@ -18,7 +18,7 @@ const ViewLoopFragment = function($viewDescription, $viewProps) {
 
     const $viewAnchor = document.createComment('Loop Anchor Start : ' + $viewDescription.repeat);
     const $viewAnchorEnd = document.createComment('Loop Anchor End : ' + $viewDescription.repeat);
-    /** @type {{store: Object.<string, {node: ViewElementFragment, localState: State}>,current: Array,last: Array }} */
+    /** @type {{store: Object.<string, {node: ViewElementFragment, localState: State, data: *}>,current: Array,last: Array }} */
     const $nodeInstancesByKey = {
         store: {},
         current: [],
@@ -33,7 +33,7 @@ const ViewLoopFragment = function($viewDescription, $viewProps) {
     let $itemKeyName = '';
     let $itemValueName = '';
     let keyState = new State({ [$itemKeyName]: '' });
-    keyState.parent = $viewProps.localState ?? $viewProps.componentInstance.getState();
+    keyState.parent = $viewProps.getStateToUse();
     const $keyTemplate = new Template('', { ...$viewProps, localState: keyState});
 
     let $isBuild = false;
@@ -70,16 +70,19 @@ const ViewLoopFragment = function($viewDescription, $viewProps) {
 
         if($nodeInstancesByKey.store[nodeKey]) {
             const existingNode = $nodeInstancesByKey.store[nodeKey];
-            existingNode.localState.set(stateData);
+            if(existingNode.data !== stateData[$itemValueName]) {
+                existingNode.localState.set(stateData);
+            }
             existingNode.node.restoreRef();
             return;
         }
 
         const localState = new State(stateData);
-        localState.parent = ($viewProps.localState) ? $viewProps.localState : $viewProps.componentInstance.getState();
+        localState.parent = $viewProps.getStateToUse();
         const node = new ViewElementFragment($viewDescriptionWithoutRepeat, { ...$viewProps, localState });
         $nodeInstancesByKey.store[nodeKey] = {
             node,
+            data: stateData[$itemValueName],
             localState
         };
     };

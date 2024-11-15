@@ -4,7 +4,7 @@ import AbstractTemplate from "./AbstractTemplate";
 /**
  *
  * @param {string} $template
- * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+ * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
  * @param {boolean} $isWithTry
  * @param {boolean} $catchValue
  *
@@ -20,9 +20,6 @@ const Template = function($template, $viewProps, $isWithTry = false, $catchValue
 
     /** @type {Function[]} */
     const $listeners = [];
-
-    /** @type {State} */
-    let $componentState = $viewProps.componentInstance.getState();
 
     /** @type {string[]} */
     let requestedVariablesNames = [];
@@ -121,7 +118,7 @@ const Template = function($template, $viewProps, $isWithTry = false, $catchValue
             return;
         }
 
-        const stateSource = $viewProps.localState || $componentState;
+        const stateSource = $viewProps.getStateToUse();
 
         if(cleanState === true && $viewProps.localState) {
             $viewProps.localState.disconnect();

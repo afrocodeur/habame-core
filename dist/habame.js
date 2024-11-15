@@ -4,6 +4,19 @@
     (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.Habame = factory());
 })(this, (function () { 'use strict';
 
+    const DEFAULT_SLOT_NAME = 'default';
+
+    const SLOT_RENDER_TAG_NAME = 'yield-fragment';
+    const SLOT_DEFINITION_TAG_NAME = 'slot-fragment';
+    const IS_PROXY_PROPERTY =  '__IS_PROXY_PROPERTY__';
+    const PROXY_STATE_ITEM =  '__PROXY_STATE_ITEM__';
+    const PROXY_TARGET_LABEL =  '__PROXY_TARGET_LABEL__';
+
+    const EVENT_DIRECTIVE = {
+        PREVENT_DEFAULT: 'prevent',
+        STOP_PROPAGATION: 'stop'
+    };
+
     /**
      *
      * @class
@@ -23,9 +36,16 @@
             if(!$listeners[name]) {
                 return;
             }
+
+            const args = (params || []).map((item) => {
+                if(item[IS_PROXY_PROPERTY]) {
+                    return item.toObject();
+                }
+                return item;
+            });
+
             $listeners[name].forEach((listener) => {
-                params = params || [];
-                listener.apply(listener, params);
+                listener.apply(listener, args);
             });
         };
 
@@ -110,51 +130,146 @@
         'splice'
     ];
 
-    const stateItemMutatorOverride = function($value, $stateItem) {
-        if(!$value || typeof $value !== 'object' || !$stateItem) {
-            return;
-        }
-        let mutators = [];
 
-        if(Array.isArray($value)) {
+
+    const transformToProxy = function(object, options) {
+        if(!object || typeof object !== 'object') {
+            return object;
+        }
+        options.path = options.path || [];
+        for(const name in object) {
+            if(typeof object[name] === 'object') {
+                const proxy = transformToProxy(object[name], {
+                    ...options,
+                    path: [...options.path, name]
+                });
+                if(Array.isArray(object[name])) {
+                    object[name] = proxy;
+                }
+            }
+        }
+
+        let mutators = [];
+        if(Array.isArray(object)) {
             mutators = ARRAY_OVERRIDABLE_METHODS;
         }
-        else {
-            mutators = $value.MUTATORS || mutators;
+        else if(object && object.MUTATORS) {
+            mutators = object.MUTATORS;
         }
 
-        $value.ORIGINAL_METHODS = $value.ORIGINAL_METHODS || {};
+        return new Proxy(object, {
+            get(target, prop) {
+                if(prop === IS_PROXY_PROPERTY) {
+                    return true;
+                }
+                if(prop === PROXY_STATE_ITEM) {
+                    return options.$stateItem;
+                }
+                if(prop === PROXY_TARGET_LABEL) {
+                    return object;
+                }
 
-        mutators.forEach((methodName) => {
-            const nativeMethod = $value.ORIGINAL_METHODS[methodName] || $value[methodName];
+                const value = target[prop];
+                if(typeof value === 'function') {
+                    return function() {
+                        const result = value.apply(target, Array.from(arguments));
+                        if(mutators.includes(prop)) {
+                            options.$stateItem.trigger();
+                        }
+                        return result;
+                    };
+                }
 
-            $value[methodName] = function() {
-                const result = nativeMethod.apply($value, Array.from(arguments));
-                $stateItem.trigger();
-                return result;
-            };
+                if(prop === 'toObject' && object.toObject === undefined) {
+                    return () => {
+                        return JSON.parse(JSON.stringify(target));
+                    };
+                }
+
+                return value;
+            },
+            set(target, prop, value) {
+                const propPath = [...options.path, prop].join('.');
+                const oldValue = target[prop];
+                if(typeof value === 'object') {
+                    if(value === target[prop]) {
+                        return;
+                    }
+                    if(value && value[IS_PROXY_PROPERTY] === true) {
+                        value = JSON.parse(JSON.stringify(value));
+                    }
+                    const proxy = transformToProxy(value, options);
+                    target[prop] = (Array.isArray(value)) ? proxy : value;
+                }
+                else {
+                    target[prop] = value;
+                }
+                options.onSet && options.onSet(propPath, oldValue, value);
+            }
+        });
+    };
+
+    const stateItemMutatorOverride = function($value, $stateItem) {
+        if(!$value || typeof $value !== 'object' || !$stateItem) {
+            return $value;
+        }
+
+        if($value[IS_PROXY_PROPERTY]) {
+            // if($stateItem === $value[PROXY_STATE_ITEM]) {
+            //     return $value;
+            // }
+            // $value = JSON.parse(JSON.stringify($value));
+            return $value;
+        }
+
+        return transformToProxy($value, {
+            path: [],
+            $stateItem,
+            onSet: function(path, oldValue, newValue) {
+                $stateItem.handleUpdate(path, oldValue, newValue);
+            }
         });
     };
 
     /**
      *
-     * @param {*}$defaultValue
+     * @param {string} $stateName
+     * @param {*} $defaultValue
      * @param {State} $parentState
      *
      * @class
      */
-    const StateItem = function($defaultValue, $parentState) {
-
-        stateItemMutatorOverride($defaultValue, this);
+    const StateItem = function($stateName, $defaultValue, $parentState) {
 
         const $stateValue = {
             default: $defaultValue,
-            current: $defaultValue,
+            current: null,
             last: $defaultValue
         };
 
         /** @type {Function[]} */
         const $listeners = [];
+
+        /** @type {Object.<string, Function[]>} */
+        const $watchListeners = {};
+
+        /**
+         * @param {string} path
+         * @param {*} oldValue
+         * @param {*} newValue
+         */
+        const triggerWatchListener = (path, oldValue, newValue) => {
+            if($parentState && $parentState.isSwitchOff()) {
+                return;
+            }
+            const listeners = $watchListeners[path];
+            if(!listeners) {
+                return;
+            }
+            listeners.forEach((listener) => {
+                listener.apply(listener, [oldValue, newValue]);
+            });
+        };
 
         const triggerListener = () => {
             if($parentState && $parentState.isSwitchOff()) {
@@ -171,13 +286,17 @@
          *
          * @returns {boolean}
          */
-        this.set = function(value, shouldTriggerListeners = true) {
+        this.set = (value, shouldTriggerListeners = true) => {
             if(value === $stateValue.current) {
                 return false;
             }
+            if($stateValue.current && $stateValue.current[IS_PROXY_PROPERTY]) {
+                if(value === $stateValue.current[PROXY_TARGET_LABEL]) {
+                    return false;
+                }
+            }
             $stateValue.last = $stateValue.current;
-            stateItemMutatorOverride(value);
-            $stateValue.current = value;
+            $stateValue.current = stateItemMutatorOverride(value, this);
             if(shouldTriggerListeners) {
                 triggerListener();
             }
@@ -196,18 +315,38 @@
             return $stateValue.default;
         };
 
+        this.getName = function() {
+            return $stateName;
+        };
+
         /**
          * @param {Function} listener
          *
          * @returns {Function}
          */
         this.onUpdate = function(listener) {
-            // Todo: thinks about options to allow once
+            // Todo: thinks about options to allow once edit
             $listeners.push(listener);
             return listener;
         };
 
-        this.watch = this.onUpdate;
+        /**
+         * @param {string} path
+         * @param {*} oldValue
+         * @param {*} newValue
+         */
+        this.handleUpdate = function(path, oldValue, newValue) {
+            this.trigger();
+            triggerWatchListener(path, oldValue, newValue);
+        };
+
+        /**
+         * @param {string} path
+         * @param {Function} callback
+         */
+        this.watch = function(path, callback) {
+            $watchListeners[path] = callback;
+        };
 
         this.trigger = function() {
             triggerListener();
@@ -227,6 +366,8 @@
         this.reset = function() {
             this.set($stateValue.default);
         };
+
+        $stateValue.current = stateItemMutatorOverride($defaultValue, this);
     };
 
     /**
@@ -238,11 +379,24 @@
      */
     const ComponentProps = function($propTemplates = {}, $slots = {}) {
 
+
+
+        /**
+         * @param {string} propName
+         */
+        const getPropValue = (propName) => {
+            const value = $propTemplates[propName].value();
+            if(value[IS_PROXY_PROPERTY]) {
+                return value.toObject();
+            }
+            return value;
+        };
+
         /**
          * @param {string} propName
          */
         const updatePropValue = (propName) => {
-            this[propName] = $propTemplates[propName].value();
+            this[propName] = getPropValue(propName);
         };
 
         const updatePropsValues = () => {
@@ -306,7 +460,7 @@
         this.all = function() {
             const props = {};
             for (const propName in $propTemplates) {
-                props[propName] = $propTemplates[propName].value();
+                props[propName] = getPropValue(propName);
             }
             return props;
         };
@@ -364,6 +518,7 @@
         const $listeners = [];
         const $triggerListenersOptions = {
             enable: true,
+            observer: null,
             listenersToHandle: new Set()
         };
         const $propsUsed = { props: null, callbacks: {} };
@@ -373,6 +528,11 @@
          */
         const triggerStateItems = (stateNames) => {
             if(!$triggerListenersOptions.enable) {
+                if($triggerListenersOptions.observer) {
+                    if($triggerListenersOptions.observer(this)) {
+                        this.switchOn();
+                    }
+                }
                 return;
             }
 
@@ -398,7 +558,7 @@
             if($stateItems[stateName]) {
                 return $stateItems[stateName];
             }
-            const stateItem = new StateItem(stateValue, this);
+            const stateItem = new StateItem(stateName, stateValue, this);
 
             // If this state change, let's inform all concerned listeners
             stateItem.onUpdate(() => triggerStateItems([stateName]));
@@ -417,12 +577,16 @@
             return stateItem;
         };
 
-        this.switchOff = function() {
+        /**
+         * @param {Function} observer
+         */
+        this.switchOff = function(observer) {
             $triggerListenersOptions.enable = false;
+            $triggerListenersOptions.observer = observer;
         };
 
         this.isSwitchOff = function() {
-           return $triggerListenersOptions.enable === false;
+            return (($triggerListenersOptions.enable === false) || (this.parent && this.parent.isSwitchOff()));
         };
 
         this.switchOn = function() {
@@ -544,6 +708,20 @@
         };
 
         /**
+         * @param {string[]} names
+         * @param {Function|AsyncFunction} callbabk
+         */
+        this.edit = async function(names, callbabk) {
+            if(typeof callbabk === 'function') {
+                if(callbabk.constructor.name === 'AsyncFunction') {
+                    await callbabk();
+                }
+                callbabk && callbabk();
+            }
+            triggerStateItems(names);
+        };
+
+        /**
          * @param {string} name
          *
          * @returns {boolean}
@@ -619,17 +797,30 @@
          * @param {string[]} names
          * @param {Function} listener
          * @param {boolean} isToHandleFirst
+         * @returns {{names, listener, remove: boolean}}
+         */
+        this.addListener =  function(names, listener, isToHandleFirst) {
+            const listenerItem = { names, listener, remove: false };
+            isToHandleFirst ? $listeners.unshift(listenerItem) : $listeners.push(listenerItem);
+            return listenerItem;
+        };
+
+        /**
+         *
+         * @param {string[]} names
+         * @param {Function} listener
+         * @param {boolean} isToHandleFirst
          *
          * @returns {Function}
          */
         this.onUpdate = function(names, listener, isToHandleFirst = false) {
             const notFoundStateNames = names.filter((name) => !this.exists(name));
-            const item = { names, listener, remove: false };
-            isToHandleFirst ? $listeners.unshift(item) : $listeners.push(item);
+            const listenerItem = this.addListener(names, listener, isToHandleFirst);
             if(notFoundStateNames.length === 0) {
                 return listener;
             }
 
+            /** @type {{state: State, variables: string[]}[]} */
             const dependedStates = [];
             notFoundStateNames.forEach((name) => {
                 const dependedState = this.getStateWith(name);
@@ -651,9 +842,14 @@
             dependedStates.forEach(({ state, variables}) => {
                 const updateDataOptions = { variables, state };
                 state.onUpdate(variables, () => {
-                    if(!$triggerListenersOptions.enable) {
-                        $triggerListenersOptions.listenersToHandle.add(updateDataOptions);
+                    if(listenerItem.remove) {
                         return;
+                    }
+                    if(this.isSwitchOff()) {
+                        if(!$triggerListenersOptions.observer || !$triggerListenersOptions.observer(this)) {
+                            $triggerListenersOptions.listenersToHandle.add(updateDataOptions);
+                            return;
+                        }
                     }
                     listener.apply(listener, Array.from(arguments));
                 });
@@ -662,12 +858,17 @@
             return listener;
         };
 
+        this.removeOnUpdateListenerFromParent = function(listener) {
+            return (this.parent) ? this.parent.removeOnUpdateListener(listener) : null;
+        };
+
         this.removeOnUpdateListener = function(listener) {
             const index  = $listeners.findIndex((item) => item.listener === listener);
             if(index === -1) {
                 return;
             }
             $listeners.splice(index, 1);
+            this.removeOnUpdateListenerFromParent(listener);
         };
 
         this.unlock = function() {
@@ -693,13 +894,13 @@
 
     /**
      *
-     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
      *
      * @class
      */
     const AbstractTemplate = function($viewProps) {
 
-        const $currentState = $viewProps.localState ?? $viewProps.componentInstance.getState();
+        const $currentState = $viewProps.getStateToUse();
         const $componentActions = $viewProps.componentInstance.getActions();
 
         /**
@@ -748,7 +949,7 @@
     /**
      *
      * @param {string} $template
-     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
      * @param {boolean} $isWithTry
      * @param {boolean} $catchValue
      *
@@ -764,9 +965,6 @@
 
         /** @type {Function[]} */
         const $listeners = [];
-
-        /** @type {State} */
-        let $componentState = $viewProps.componentInstance.getState();
 
         /** @type {string[]} */
         let requestedVariablesNames = [];
@@ -865,7 +1063,7 @@
                 return;
             }
 
-            const stateSource = $viewProps.localState || $componentState;
+            const stateSource = $viewProps.getStateToUse();
 
             if(cleanState === true && $viewProps.localState) {
                 $viewProps.localState.disconnect();
@@ -913,7 +1111,7 @@
     /**
      *
      * @param {string} $template
-     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
      *
      * @class
      */
@@ -988,7 +1186,7 @@
     /**
      *
      * @param {string} $ifStatement
-     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
      *
      *  @class
      */
@@ -1026,9 +1224,11 @@
         };
 
         this.loadStateWatcher = function() {
-            const state = $viewProps.componentInstance.getState();
+            const state = $viewProps.getStateToUse();
+            const stateToWatchNames = $ifTemplate.statesToWatch();
+
             state.removeOnUpdateListener(trigger);
-            state.onUpdate($ifTemplate.statesToWatch(), trigger, true);
+            state.onUpdate(stateToWatchNames, trigger, true);
         };
 
         /**
@@ -1079,7 +1279,7 @@
      *
      * @param {Object} arg
      * @param {string|Array|Object} arg.$viewDescription
-     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} arg.$viewProps
+     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} arg.$viewProps
      * @param {boolean} arg.$isFragment
      *
      * @class
@@ -1099,6 +1299,10 @@
             parent: null // the node parent
         };
 
+        const switchOnState = () => {
+            return $ifStatement.isTrue();
+        };
+
         /**
          * @param {string} ifDescription
          * @returns {?ViewIfStatement}
@@ -1113,7 +1317,7 @@
             $ifStatement = new ViewIfStatement(ifDescription, $viewProps);
             $ifStatement.watch((isTrue) => {
                 if($viewProps.localState) {
-                    (!isTrue) ? $viewProps.localState.switchOff() : $viewProps.localState.switchOn();
+                    (!isTrue) ? $viewProps.localState.switchOff(switchOnState) : $viewProps.localState.switchOn();
                 }
                 (isTrue) ? this.mount() : this.unmount();
             });
@@ -1132,8 +1336,12 @@
             }
             this.beforeRenderProcess ? this.beforeRenderProcess() : null;
             this.renderProcess(parentNode, $ifStatement);
-            ($ifStatement && $ifStatement.isFalse()) ? this.setIsUnmounted() : this.setIsMounted();
-            this.setIsRendered();
+            if($ifStatement && $ifStatement.isFalse()){
+                this.setIsUnmounted();
+            }else {
+                this.setIsMounted();
+                this.setIsRendered();
+            }
         };
 
         /**
@@ -1370,7 +1578,7 @@
 
     /**
      * @param {string} $viewDescription
-     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
 
      * @class
      * @extends AbstractView
@@ -1406,7 +1614,9 @@
          */
         const createConnexion = function(htmlTextNode, viewPart) {
             viewPart.template.onUpdate((updatedValue) => {
-                htmlTextNode.textContent = updatedValue;
+                if(updatedValue !== htmlTextNode.textContent) {
+                    htmlTextNode.textContent = updatedValue;
+                }
             });
         };
 
@@ -1455,7 +1665,7 @@
     /**
      *
      * @param {string} $template
-     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
      *
      * @class
      * @extends AbstractTemplate
@@ -1468,7 +1678,7 @@
 
         /** @type {{states: string[], actions: string[]}} */
         let $requestedVariablesNames = {};
-        const $stateToUse = $viewProps.localState ?? $viewProps.componentInstance.getState();
+        const $stateToUse = $viewProps.getStateToUse();
         const $actions = $viewProps.componentInstance.getActions();
 
         /** @type {?Function} */
@@ -1533,7 +1743,7 @@
      * @param {Object} arg
      * @param {Object} arg.$viewDescription
      * @param {Object.<string, {template: ActionTemplate, callback: Function, name: string}>} arg.$componentEventActions
-     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} arg.$viewProps
+     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} arg.$viewProps
      * @param {Object.<string, ?{ builder: function(*, *): ViewElementFragment, updateViewDescription: Function, deleteInstances: Function }>} arg.$slotManagers
      * @param {{getProps: Function, getHbEvent: Function, buildEvent: Function}} arg.$callbacks
      *
@@ -1687,7 +1897,7 @@
     /**
      *
      * @param {Object} $viewDescription
-     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
      *
      * @class
      * @extends AbstractView
@@ -1745,7 +1955,7 @@
                     const localState = callback(viewDescription.props);
                     const customProps = { ...$viewProps };
                     if(localState) {
-                        localState.parent = $viewProps.localState || $viewProps.componentInstance.getState();
+                        localState.parent = $viewProps.getStateToUse();
                         customProps.localState = localState;
                     }
                     const node = new ViewElementFragment(viewDescription, customProps);
@@ -1911,7 +2121,7 @@
      * @param {HTMLElement} $htmlNode
      * @param {string} $attrName
      * @param {string} $attrValue
-     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
      *
      * @class
      */
@@ -1989,7 +2199,8 @@
 
         ((() => { /* Constructor */
             updateNodeAttribute(this.value());
-            $viewProps.componentInstance.getState().onUpdate($templateDescription.statesToWatch(), () => {
+            const state = $viewProps.getStateToUse();
+            state.onUpdate($templateDescription.statesToWatch(), () => {
                 this.emitUpdate();
             });
         })());
@@ -2237,16 +2448,6 @@
         })());
     };
 
-    const DEFAULT_SLOT_NAME = 'default';
-
-    const SLOT_RENDER_TAG_NAME = 'yield-fragment';
-    const SLOT_DEFINITION_TAG_NAME = 'slot-fragment';
-
-    const EVENT_DIRECTIVE = {
-        PREVENT_DEFAULT: 'prevent',
-        STOP_PROPAGATION: 'stop'
-    };
-
     /**
      * @param {string|Array|Object} newDescription
      * @param {string|Array|Object} newDescriptionIndex
@@ -2335,7 +2536,7 @@
      * @param {Object} arg
      * @param {Object} arg.$viewDescription
      * @param {Object.<string, ViewHtmlElementAttribute>} arg.$htmlAttributes
-     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} arg.$viewProps
+     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} arg.$viewProps
      * @param {Object.<string, {name: string, callback: Function,disconnect: Function, updateAction: Function}>} arg.$htmlEventsStore
      * @param {{getChildren: Function, getHtmlNode: Function, buildEventConnexion: Function}} arg.$callback
      *
@@ -2422,7 +2623,7 @@
     /**
      *
      * @param {Object} $viewDescription
-     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
      *
      *
      * @class
@@ -2431,7 +2632,7 @@
     const ViewHtmlElement = function($viewDescription, $viewProps) {
         if($viewDescription.if) {
             const localState = new State();
-            localState.parent = $viewProps.localState || $viewProps.componentInstance.getState();
+            localState.parent = $viewProps.getStateToUse();
             localState.if = $viewDescription.if;
             $viewProps = { ...$viewProps, localState };
         }
@@ -2527,7 +2728,7 @@
             if($children) {
                 $children.render($htmlNode);
             }
-            parentNode.append($htmlNode);
+            parentNode && parentNode.append($htmlNode);
             $lifeCycleHandler.created();
             this.setAnchor($viewAnchor);
         };
@@ -2613,6 +2814,9 @@
             if(ifStatement && ifStatement.isFalse()) {
                 return;
             }
+            if(!$htmlNode) {
+                renderContent();
+            }
             $lifeCycleHandler.beforeMount();
             if(($viewDescription.content || $viewDescription.name === SLOT_RENDER_TAG_NAME) && $children === null) {
                 const fragment = document.createDocumentFragment();
@@ -2624,8 +2828,9 @@
             this.moveIntoParent();
             if($htmlNode instanceof DocumentFragment) {
                 $children.mount();
-                this.insertAfter($htmlNode, $viewAnchor);
             }
+            this.insertAfter($htmlNode, $viewAnchor);
+
             this.setIsMounted();
             $lifeCycleHandler.mounted();
         };
@@ -2804,7 +3009,7 @@
     /**
      *
      * @param {string} $loopExpression
-     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
      *
      * @class
      */
@@ -2936,7 +3141,7 @@
 
     /**
      * @param {Array|Object} $viewDescription
-     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
      *
      * @class
      * @extends AbstractView
@@ -2947,7 +3152,7 @@
 
         const $viewAnchor = document.createComment('Loop Anchor Start : ' + $viewDescription.repeat);
         const $viewAnchorEnd = document.createComment('Loop Anchor End : ' + $viewDescription.repeat);
-        /** @type {{store: Object.<string, {node: ViewElementFragment, localState: State}>,current: Array,last: Array }} */
+        /** @type {{store: Object.<string, {node: ViewElementFragment, localState: State, data: *}>,current: Array,last: Array }} */
         const $nodeInstancesByKey = {
             store: {},
             current: [],
@@ -2962,7 +3167,7 @@
         let $itemKeyName = '';
         let $itemValueName = '';
         let keyState = new State({ [$itemKeyName]: '' });
-        keyState.parent = $viewProps.localState ?? $viewProps.componentInstance.getState();
+        keyState.parent = $viewProps.getStateToUse();
         const $keyTemplate = new Template('', { ...$viewProps, localState: keyState});
 
         let $isBuild = false;
@@ -2999,16 +3204,19 @@
 
             if($nodeInstancesByKey.store[nodeKey]) {
                 const existingNode = $nodeInstancesByKey.store[nodeKey];
-                existingNode.localState.set(stateData);
+                if(existingNode.data !== stateData[$itemValueName]) {
+                    existingNode.localState.set(stateData);
+                }
                 existingNode.node.restoreRef();
                 return;
             }
 
             const localState = new State(stateData);
-            localState.parent = ($viewProps.localState) ? $viewProps.localState : $viewProps.componentInstance.getState();
+            localState.parent = $viewProps.getStateToUse();
             const node = new ViewElementFragment($viewDescriptionWithoutRepeat, { ...$viewProps, localState });
             $nodeInstancesByKey.store[nodeKey] = {
                 node,
+                data: stateData[$itemValueName],
                 localState
             };
         };
@@ -3179,8 +3387,11 @@
          * @param {DocumentFragment|ParentNode|HTMLElement} parentNode
          */
         this.updateViewDescription = function(viewDescription, parentNode) {
+            const isViewDescriptionTypeAreDifferent =
+                (typeof $viewDescription !== typeof viewDescription)
+                || (typeof $viewDescription === 'object' && Array.isArray($viewDescription) === Array.isArray(viewDescription));
 
-            if(typeof $viewDescription !== typeof viewDescription) {
+            if(isViewDescriptionTypeAreDifferent) {
                 $fragmentElements.forEach((node) => {
                     node.remove();
                 });
@@ -3255,7 +3466,7 @@
     /**
      *
      * @param {string|Array|Object} $viewDescription
-     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+     * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
      *
      * @class
      * @extends AbstractView
@@ -3545,6 +3756,9 @@
         this.putInRenderBox = function(startAnchor, endAnchor) {
             let nodeInView = startAnchor.nextSibling;
             while(nodeInView !== endAnchor) {
+                if(!nodeInView) {
+                    break;
+                }
                 const nodeToStore = nodeInView;
                 nodeInView = nodeInView.nextSibling;
                 $renderBox.appendChild(nodeToStore);
@@ -3587,13 +3801,16 @@
         /** @type {null|HTMLElement|ParentNode} */
         let $parentNode = null;
 
-        /** @type {{view: View, componentInstance: ?Component, appInstance: App, localState: ?State, getState: ?Function }} */
+        /** @type {{view: View, componentInstance: ?Component, appInstance: App, localState: ?State, getState: ?Function, getStateToUse: function(): State }} */
         const $viewProps = {
             view: this,
             appInstance: $appInstance,
             componentInstance: null,
             localState: null,
-            getState: null
+            getState: null,
+            getStateToUse: function() {
+                return this.localState ? this.localState : this.componentInstance.getState();
+            }
         };
 
         AbstractView.call(this, { $viewDescription, $viewProps });
@@ -3838,7 +4055,7 @@
                 }
                 elementChildren.push(child);
             });
-            element.content = (elementChildren.length === 1) ? elementChildren[0] : elementChildren;
+            element.content = elementChildren;
             element.slots = slots;
         }
         else if(nodeElement.textContent) {
@@ -5161,12 +5378,15 @@
         const HabameCore = {
             Services: {},
             /**
-             * @param {HTMLElement} htmlNodeElement
+             * @param {HTMLElement|string} htmlNodeElement
              * @param {?string} name
              *
              * @returns {App}
              */
             createRoot: function(htmlNodeElement, name = null) {
+                if(typeof htmlNodeElement === 'string') {
+                    htmlNodeElement = document.getElementById(htmlNodeElement);
+                }
                 const app = new App(htmlNodeElement, HabameCore);
                 if(name) {
                     $apps[name] = app;

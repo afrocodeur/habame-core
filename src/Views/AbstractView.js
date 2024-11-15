@@ -5,7 +5,7 @@ import AbstractViewDev from "./Dev/AbstractViewDev";
  *
  * @param {Object} arg
  * @param {string|Array|Object} arg.$viewDescription
- * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} arg.$viewProps
+ * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} arg.$viewProps
  * @param {boolean} arg.$isFragment
  *
  * @class
@@ -25,6 +25,10 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
         parent: null // the node parent
     };
 
+    const switchOnState = () => {
+        return $ifStatement.isTrue();
+    };
+
     /**
      * @param {string} ifDescription
      * @returns {?ViewIfStatement}
@@ -39,7 +43,7 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
         $ifStatement = new ViewIfStatement(ifDescription, $viewProps);
         $ifStatement.watch((isTrue) => {
             if($viewProps.localState) {
-                (!isTrue) ? $viewProps.localState.switchOff() : $viewProps.localState.switchOn();
+                (!isTrue) ? $viewProps.localState.switchOff(switchOnState) : $viewProps.localState.switchOn();
             }
             (isTrue) ? this.mount() : this.unmount();
         });
@@ -58,8 +62,12 @@ const AbstractView = function({ $viewDescription, $viewProps, $isFragment }) {
         }
         this.beforeRenderProcess ? this.beforeRenderProcess() : null;
         this.renderProcess(parentNode, $ifStatement);
-        ($ifStatement && $ifStatement.isFalse()) ? this.setIsUnmounted() : this.setIsMounted();
-        this.setIsRendered();
+        if($ifStatement && $ifStatement.isFalse()){
+            this.setIsUnmounted();
+        }else {
+            this.setIsMounted();
+            this.setIsRendered();
+        }
     };
 
     /**

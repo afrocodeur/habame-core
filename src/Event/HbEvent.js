@@ -1,3 +1,5 @@
+import {IS_PROXY_PROPERTY} from "../constantes";
+
 /**
  *
  * @class
@@ -17,9 +19,16 @@ const HbEvent = function () {
         if(!$listeners[name]) {
             return;
         }
+
+        const args = (params || []).map((item) => {
+            if(item[IS_PROXY_PROPERTY]) {
+                return item.toObject();
+            }
+            return item;
+        });
+
         $listeners[name].forEach((listener) => {
-            params = params || [];
-            listener.apply(listener, params);
+            listener.apply(listener, args);
         });
     };
 

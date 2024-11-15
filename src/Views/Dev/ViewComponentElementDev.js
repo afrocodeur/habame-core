@@ -4,7 +4,7 @@ import Template from "../../Template/Template";
  * @param {Object} arg
  * @param {Object} arg.$viewDescription
  * @param {Object.<string, {template: ActionTemplate, callback: Function, name: string}>} arg.$componentEventActions
- * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} arg.$viewProps
+ * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} arg.$viewProps
  * @param {Object.<string, ?{ builder: function(*, *): ViewElementFragment, updateViewDescription: Function, deleteInstances: Function }>} arg.$slotManagers
  * @param {{getProps: Function, getHbEvent: Function, buildEvent: Function}} arg.$callbacks
  *

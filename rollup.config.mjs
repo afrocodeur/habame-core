@@ -8,21 +8,34 @@ const __dirname = path.dirname(__filename);
 
 const projectRootDir = path.resolve(__dirname);
 
-export default {
-    input: 'src/main.js',
-    output: [
+let output = [
+    {
+        file: 'dist/habame.js',
+        format: 'umd',
+        name: "Habame",
+    },
+    {
+        file: 'dist/habame.min.js',
+        format: 'iife',
+        name: "Habame",
+        plugins: [terser()]
+    }
+];
+
+if(process.env.ENV === 'dev') {
+    output = [
         {
-            file: 'dist/habame.js',
+            file: 'dist/dev.habame.js',
             format: 'umd',
             name: "Habame",
         },
-        {
-            file: 'dist/habame.min.js',
-            format: 'iife',
-            name: "Habame",
-            plugins: [terser()]
-        }
-    ],
+    ];
+}
+
+
+export default {
+    input: 'src/main.js',
+    output: output,
     watch: {
         exclude: ['node_modules/**', 'demo']
     },

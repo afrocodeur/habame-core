@@ -14,7 +14,7 @@ const ATTR_MAPPERS =  {
  * @param {HTMLElement} $htmlNode
  * @param {string} $attrName
  * @param {string} $attrValue
- * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+ * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
  *
  * @class
  */
@@ -92,7 +92,8 @@ const ViewHtmlElementAttribute =  function($htmlNode, $attrName, $attrValue, $vi
 
     ((() => { /* Constructor */
         updateNodeAttribute(this.value());
-        $viewProps.componentInstance.getState().onUpdate($templateDescription.statesToWatch(), () => {
+        const state = $viewProps.getStateToUse();
+        state.onUpdate($templateDescription.statesToWatch(), () => {
             this.emitUpdate();
         });
     })());

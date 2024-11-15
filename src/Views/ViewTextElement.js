@@ -4,7 +4,7 @@ import ViewTextElementDev from "./Dev/ViewTextElementDev";
 
 /**
  * @param {string} $viewDescription
- * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+ * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
 
  * @class
  * @extends AbstractView
@@ -40,7 +40,9 @@ const ViewTextElement = function($viewDescription, $viewProps) {
      */
     const createConnexion = function(htmlTextNode, viewPart) {
         viewPart.template.onUpdate((updatedValue) => {
-            htmlTextNode.textContent = updatedValue;
+            if(updatedValue !== htmlTextNode.textContent) {
+                htmlTextNode.textContent = updatedValue;
+            }
         });
     };
 

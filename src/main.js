@@ -26,12 +26,15 @@ const Habame = (function(){
     const HabameCore = {
         Services: {},
         /**
-         * @param {HTMLElement} htmlNodeElement
+         * @param {HTMLElement|string} htmlNodeElement
          * @param {?string} name
          *
          * @returns {App}
          */
         createRoot: function(htmlNodeElement, name = null) {
+            if(typeof htmlNodeElement === 'string') {
+                htmlNodeElement = document.getElementById(htmlNodeElement);
+            }
             const app = new App(htmlNodeElement, HabameCore);
             if(name) {
                 $apps[name] = app;

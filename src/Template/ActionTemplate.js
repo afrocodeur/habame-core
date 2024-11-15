@@ -3,7 +3,7 @@ import AbstractTemplate from "./AbstractTemplate";
 /**
  *
  * @param {string} $template
- * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+ * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
  *
  * @class
  * @extends AbstractTemplate
@@ -16,7 +16,7 @@ const ActionTemplate = function($template, $viewProps) {
 
     /** @type {{states: string[], actions: string[]}} */
     let $requestedVariablesNames = {};
-    const $stateToUse = $viewProps.localState ?? $viewProps.componentInstance.getState();
+    const $stateToUse = $viewProps.getStateToUse();
     const $actions = $viewProps.componentInstance.getActions();
 
     /** @type {?Function} */

@@ -99,7 +99,7 @@ const xmlNodeToJson =  function(nodeElement) {
             }
             elementChildren.push(child);
         });
-        element.content = (elementChildren.length === 1) ? elementChildren[0] : elementChildren;
+        element.content = elementChildren;
         element.slots = slots;
     }
     else if(nodeElement.textContent) {

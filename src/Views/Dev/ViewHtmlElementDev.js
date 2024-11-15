@@ -5,7 +5,7 @@ import ViewHtmlElementAttribute from "../ViewHtmlElementAttribute";
  * @param {Object} arg
  * @param {Object} arg.$viewDescription
  * @param {Object.<string, ViewHtmlElementAttribute>} arg.$htmlAttributes
- * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} arg.$viewProps
+ * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} arg.$viewProps
  * @param {Object.<string, {name: string, callback: Function,disconnect: Function, updateAction: Function}>} arg.$htmlEventsStore
  * @param {{getChildren: Function, getHtmlNode: Function, buildEventConnexion: Function}} arg.$callback
  *

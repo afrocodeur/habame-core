@@ -1,3 +1,5 @@
+import {IS_PROXY_PROPERTY} from "../constantes";
+
 /**
  *
  * @param {Object.<string, Template>} $propTemplates
@@ -7,11 +9,24 @@
  */
 const ComponentProps = function($propTemplates = {}, $slots = {}) {
 
+
+
+    /**
+     * @param {string} propName
+     */
+    const getPropValue = (propName) => {
+        const value = $propTemplates[propName].value();
+        if(value[IS_PROXY_PROPERTY]) {
+            return value.toObject();
+        }
+        return value;
+    };
+
     /**
      * @param {string} propName
      */
     const updatePropValue = (propName) => {
-        this[propName] = $propTemplates[propName].value();
+        this[propName] = getPropValue(propName);
     };
 
     const updatePropsValues = () => {
@@ -75,7 +90,7 @@ const ComponentProps = function($propTemplates = {}, $slots = {}) {
     this.all = function() {
         const props = {};
         for (const propName in $propTemplates) {
-            props[propName] = $propTemplates[propName].value();
+            props[propName] = getPropValue(propName);
         }
         return props;
     };

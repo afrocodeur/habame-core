@@ -3,7 +3,7 @@ import Template from "src/Template/Template";
 /**
  *
  * @param {string} $template
- * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+ * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
  *
  * @class
  */

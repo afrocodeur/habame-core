@@ -1,12 +1,13 @@
 {
   "name": "habame",
-  "version": "1.0.2",
+  "version": "1.0.14",
   "description": "Il faut mettre enplace un framework assez solide pour remplacer react, vue ou encore angular",
   "main": "src/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "eslint:check": "npx eslint -c .eslintrc.js src/",
-    "build": "rollup --config"
+    "build": "rollup --config",
+    "build:dev": "ENV=dev rollup --config"
   },
   "keywords": [],
   "author": "",

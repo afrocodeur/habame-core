@@ -12,7 +12,7 @@ import ViewHtmlElementDev from "./Dev/ViewHtmlElementDev";
 /**
  *
  * @param {Object} $viewDescription
- * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+ * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
  *
  *
  * @class
@@ -21,7 +21,7 @@ import ViewHtmlElementDev from "./Dev/ViewHtmlElementDev";
 const ViewHtmlElement = function($viewDescription, $viewProps) {
     if($viewDescription.if) {
         const localState = new State();
-        localState.parent = $viewProps.localState || $viewProps.componentInstance.getState();
+        localState.parent = $viewProps.getStateToUse();
         localState.if = $viewDescription.if;
         $viewProps = { ...$viewProps, localState };
     }
@@ -117,7 +117,7 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
         if($children) {
             $children.render($htmlNode);
         }
-        parentNode.append($htmlNode);
+        parentNode && parentNode.append($htmlNode);
         $lifeCycleHandler.created();
         this.setAnchor($viewAnchor);
     };
@@ -203,6 +203,9 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
         if(ifStatement && ifStatement.isFalse()) {
             return;
         }
+        if(!$htmlNode) {
+            renderContent();
+        }
         $lifeCycleHandler.beforeMount();
         if(($viewDescription.content || $viewDescription.name === SLOT_RENDER_TAG_NAME) && $children === null) {
             const fragment = document.createDocumentFragment();
@@ -214,8 +217,9 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
         this.moveIntoParent();
         if($htmlNode instanceof DocumentFragment) {
             $children.mount();
-            this.insertAfter($htmlNode, $viewAnchor);
         }
+        this.insertAfter($htmlNode, $viewAnchor);
+
         this.setIsMounted();
         $lifeCycleHandler.mounted();
     };

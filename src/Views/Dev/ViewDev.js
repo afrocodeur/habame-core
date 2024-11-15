@@ -18,6 +18,9 @@ const ViewDev = function({ $viewFragment, $viewAnchor, $viewAnchorEnd }) {
     this.putInRenderBox = function(startAnchor, endAnchor) {
         let nodeInView = startAnchor.nextSibling;
         while(nodeInView !== endAnchor) {
+            if(!nodeInView) {
+                break;
+            }
             const nodeToStore = nodeInView;
             nodeInView = nodeInView.nextSibling;
             $renderBox.appendChild(nodeToStore);

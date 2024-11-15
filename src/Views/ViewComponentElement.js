@@ -8,7 +8,7 @@ import ViewComponentElementDev from "./Dev/ViewComponentElementDev";
 /**
  *
  * @param {Object} $viewDescription
- * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+ * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
  *
  * @class
  * @extends AbstractView
@@ -66,7 +66,7 @@ const ViewComponentElement = function($viewDescription, $viewProps) {
                 const localState = callback(viewDescription.props);
                 const customProps = { ...$viewProps };
                 if(localState) {
-                    localState.parent = $viewProps.localState || $viewProps.componentInstance.getState();
+                    localState.parent = $viewProps.getStateToUse();
                     customProps.localState = localState;
                 }
                 const node = new ViewElementFragment(viewDescription, customProps);

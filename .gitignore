@@ -5,3 +5,5 @@
 # Editors Folder
 .idea
 .vscode
+
+dist/dev.habame.js

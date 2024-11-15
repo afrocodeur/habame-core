@@ -8,7 +8,7 @@ import ViewElementFragmentDev from "./Dev/ViewElementFragmentDev";
 /**
  *
  * @param {string|Array|Object} $viewDescription
- * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function }} $viewProps
+ * @param {{view: View, componentInstance: Component, appInstance: App, localState: ?State, getState: Function, getStateToUse: function(): State }} $viewProps
  *
  * @class
  * @extends AbstractView

@@ -21,6 +21,7 @@ const State = function($defaultValues = {}) {
     const $listeners = [];
     const $triggerListenersOptions = {
         enable: true,
+        observer: null,
         listenersToHandle: new Set()
     };
     const $propsUsed = { props: null, callbacks: {} };
@@ -32,6 +33,11 @@ const State = function($defaultValues = {}) {
      */
     const triggerStateItems = (stateNames) => {
         if(!$triggerListenersOptions.enable) {
+            if($triggerListenersOptions.observer) {
+                if($triggerListenersOptions.observer(this)) {
+                    this.switchOn();
+                }
+            }
             return;
         }
 
@@ -61,7 +67,7 @@ const State = function($defaultValues = {}) {
         if($stateItems[stateName]) {
             return $stateItems[stateName];
         }
-        const stateItem = new StateItem(stateValue, this);
+        const stateItem = new StateItem(stateName, stateValue, this);
 
         // If this state change, let's inform all concerned listeners
         stateItem.onUpdate(() => triggerStateItems([stateName]));
@@ -80,12 +86,16 @@ const State = function($defaultValues = {}) {
         return stateItem;
     };
 
-    this.switchOff = function() {
+    /**
+     * @param {Function} observer
+     */
+    this.switchOff = function(observer) {
         $triggerListenersOptions.enable = false;
+        $triggerListenersOptions.observer = observer;
     };
 
     this.isSwitchOff = function() {
-       return $triggerListenersOptions.enable === false;
+        return (($triggerListenersOptions.enable === false) || (this.parent && this.parent.isSwitchOff()));
     };
 
     this.switchOn = function() {
@@ -207,6 +217,20 @@ const State = function($defaultValues = {}) {
     };
 
     /**
+     * @param {string[]} names
+     * @param {Function|AsyncFunction} callbabk
+     */
+    this.edit = async function(names, callbabk) {
+        if(typeof callbabk === 'function') {
+            if(callbabk.constructor.name === 'AsyncFunction') {
+                await callbabk();
+            }
+            callbabk && callbabk();
+        }
+        triggerStateItems(names);
+    };
+
+    /**
      * @param {string} name
      *
      * @returns {boolean}
@@ -282,17 +306,30 @@ const State = function($defaultValues = {}) {
      * @param {string[]} names
      * @param {Function} listener
      * @param {boolean} isToHandleFirst
+     * @returns {{names, listener, remove: boolean}}
+     */
+    this.addListener =  function(names, listener, isToHandleFirst) {
+        const listenerItem = { names, listener, remove: false };
+        isToHandleFirst ? $listeners.unshift(listenerItem) : $listeners.push(listenerItem);
+        return listenerItem;
+    };
+
+    /**
+     *
+     * @param {string[]} names
+     * @param {Function} listener
+     * @param {boolean} isToHandleFirst
      *
      * @returns {Function}
      */
     this.onUpdate = function(names, listener, isToHandleFirst = false) {
         const notFoundStateNames = names.filter((name) => !this.exists(name));
-        const item = { names, listener, remove: false };
-        isToHandleFirst ? $listeners.unshift(item) : $listeners.push(item);
+        const listenerItem = this.addListener(names, listener, isToHandleFirst);
         if(notFoundStateNames.length === 0) {
             return listener;
         }
 
+        /** @type {{state: State, variables: string[]}[]} */
         const dependedStates = [];
         notFoundStateNames.forEach((name) => {
             const dependedState = this.getStateWith(name);
@@ -314,18 +351,24 @@ const State = function($defaultValues = {}) {
         dependedStates.forEach(({ state, variables}) => {
             const updateDataOptions = { variables, state };
             state.onUpdate(variables, () => {
-                if(item.remove) {
+                if(listenerItem.remove) {
                     return;
                 }
-                if(!$triggerListenersOptions.enable) {
-                    $triggerListenersOptions.listenersToHandle.add(updateDataOptions);
-                    return;
+                if(this.isSwitchOff()) {
+                    if(!$triggerListenersOptions.observer || !$triggerListenersOptions.observer(this)) {
+                        $triggerListenersOptions.listenersToHandle.add(updateDataOptions);
+                        return;
+                    }
                 }
                 listener.apply(listener, Array.from(arguments));
             });
         });
 
         return listener;
+    };
+
+    this.removeOnUpdateListenerFromParent = function(listener) {
+        return (this.parent) ? this.parent.removeOnUpdateListener(listener) : null;
     };
 
     this.removeOnUpdateListener = function(listener) {
@@ -335,6 +378,7 @@ const State = function($defaultValues = {}) {
         }
         const item = $listeners.splice(index, 1);
         item.remove = true;
+        this.removeOnUpdateListenerFromParent(listener);
     };
 
     this.unlock = function() {

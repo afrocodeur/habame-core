@@ -21,13 +21,16 @@ const View = function($viewDescription, $appInstance) {
     /** @type {null|HTMLElement|ParentNode} */
     let $parentNode = null;
 
-    /** @type {{view: View, componentInstance: ?Component, appInstance: App, localState: ?State, getState: ?Function }} */
+    /** @type {{view: View, componentInstance: ?Component, appInstance: App, localState: ?State, getState: ?Function, getStateToUse: function(): State }} */
     const $viewProps = {
         view: this,
         appInstance: $appInstance,
         componentInstance: null,
         localState: null,
-        getState: null
+        getState: null,
+        getStateToUse: function() {
+            return this.localState ? this.localState : this.componentInstance.getState();
+        }
     };
 
     AbstractView.call(this, { $viewDescription, $viewProps });
