@@ -383,6 +383,7 @@
 
         /**
          * @param {string} propName
+         * @returns {*}
          */
         const getPropValue = (propName) => {
             const value = $propTemplates[propName].value();
@@ -432,6 +433,8 @@
         /**
          * @param {string} name
          * @param {Function} listener
+         *
+         * @returns {{disconnect: (function(): void)}}
          */
         this.onUpdate = function(name, listener) {
             if($propTemplates[name] === undefined) {
@@ -501,10 +504,11 @@
     /**
      *
      * @param {?Object.<string, *>} $defaultValues
+     * @param {Habame} HabameCore
      *
      * @class
      */
-    const State = function($defaultValues = {}) {
+    const State = function($defaultValues = {}, HabameCore) {
 
         /** @type {Object.<string, StateItem>} */
         const $stateItems = {};
@@ -654,11 +658,20 @@
         };
 
         /**
-         * @param {Object} serviceInstance
+         * @param {string|Object} serviceInstance
          * @param {State} serviceInstance.$serviceState
          * @param {string[] }only
+         *
+         * @returns {Object}
          */
         this.useService = function(serviceInstance, only = []) {
+            if(typeof serviceInstance === 'string') {
+                serviceInstance = HabameCore.Services[serviceInstance];
+                if(!serviceInstance) {
+                    throw new Error(`Undefined service ${serviceInstance}`);
+                }
+            }
+
             const serviceState = serviceInstance.$serviceState;
             if(!serviceState || !(serviceState instanceof State)) {
                 throw new Error('Invalid service provide to useService');
@@ -677,6 +690,7 @@
                     }
                 });
             }
+            return serviceInstance;
         };
 
         /**
@@ -3417,7 +3431,7 @@
                 $viewDescription.splice(0);
                 $viewDescription.push(...viewDescription);
                 const nodesToRemove = [];
-                $fragmentElements.forEach((element, index) => {
+                $fragmentElements.forEach((element) => {
                     element.unmount(true);
                     const isNotRemoved = differences.find((item) => {
                         return item?.node === element;
@@ -4187,17 +4201,18 @@
      * @param {Function} $controller
      * @param {ComponentProps} $props
      * @param {App} $appInstance
+     * @param {Habame} HabameCore
      *
      * @class
      */
-    const Component = function($name, $view, $controller, $props, $appInstance) {
+    const Component = function($name, $view, $controller, $props, $appInstance, HabameCore) {
 
         /** @type {Object.<string, Function>} */
         const $actions = {};
 
         const $event = new HbEvent();
 
-        const $state = new State();
+        const $state = new State({}, HabameCore);
 
         const $lifecycleListeners = Lifecycle.newListenersStore();
 
@@ -4364,12 +4379,13 @@
         /**
          * @param {ComponentProps} props
          * @param {App} appInstance
+         * @param {Habame} HabameCore
          *
          * @returns {Component}
          */
-        this.create = function(props, appInstance) {
+        this.create = function(props, appInstance, HabameCore) {
             const view = getNewView(appInstance);
-            const componentInstance = new Component($name, view, $sources.controller, props, appInstance);
+            const componentInstance = new Component($name, view, $sources.controller, props, appInstance, HabameCore);
             $instances.push({ component: componentInstance, view });
             return componentInstance;
         };
@@ -4394,8 +4410,8 @@
             }
             const viewDescriptionTransformed = $viewFactory.updateViewDescription(viewDescription);
             $instances.forEach(({ view }) => {
-                typeof viewDescriptionTransformed === 'string' ? viewDescriptionTransformed : Helper.clone(viewDescriptionTransformed);
-                view?.updateViewDescription(viewDescriptionTransformed);
+                const vue = typeof viewDescriptionTransformed === 'string' ? viewDescriptionTransformed : Helper.clone(viewDescriptionTransformed);
+                view?.updateViewDescription(vue);
             });
         };
 
@@ -4412,11 +4428,11 @@
 
     /**
      * @param {HTMLElement} htmlNodeElement
-     * @param {Habame} Habame
+     * @param {Habame} HabameCore
      *
      * @class
      */
-    const App = function(htmlNodeElement, Habame) {
+    const App = function(htmlNodeElement, HabameCore) {
 
         const $event = new HbEvent();
         const $state = new State();
@@ -4428,7 +4444,7 @@
          * @returns {Component}
          */
         const createComponentInstance = (componentFactory, props) => {
-            return componentFactory.create(props, this);
+            return componentFactory.create(props, this, HabameCore);
         };
 
         /**
@@ -4438,7 +4454,7 @@
          * @returns {*}
          */
         this.createDirectiveInstance = function(name, params) {
-            const directiveFactory = window.Habame.getDirectiveFactory(name);
+            const directiveFactory = HabameCore.getDirectiveFactory(name);
             return directiveFactory.create(params);
         };
 
@@ -4467,7 +4483,7 @@
          * @returns {?App}
          */
         this.getApp = function(name) {
-            return Habame.getApp(name);
+            return HabameCore.getApp(name);
         };
 
         /**
@@ -4534,7 +4550,6 @@
 
     /**
      * @param {Habame} Habame
-     * @constructor
      */
     function DynamicComponent(Habame) {
         Habame.createComponent('DynamicComponent', function({ State, Props, App, Lifecycle }, $view) {
@@ -4588,7 +4603,6 @@
 
     /**
      * @param {Habame} Habame
-     * @constructor
      */
     function Link(Habame) {
         Habame.createComponent('Link', function({ State, Props, Actions }) {
@@ -4914,7 +4928,6 @@
 
     /**
      * @param {Habame} Habame
-     * @constructor
      */
     function Router$1(Habame) {
         Habame.createComponent('Router', function({ Props, State, Refs, App, Lifecycle }) {
@@ -5359,16 +5372,34 @@
         };
     };
 
+    /**
+     * @member {{
+     * Services: {},
+     * getDirectiveFactory: (function(string): DirectiveFactory),
+     * createService: (function(string, (function(State): void), {isUniqueInstance: boolean}?): void),
+     * getApp: (function(string): *),
+     * setDefaultViewEngine: (function(string, (function(string|object): string|object)?): void),
+     * createRoot: (function((HTMLElement|string), ?string=): App),
+     * getViewEngine: (function(string): *),
+     * createDirective: (function(string, (function(HTMLElement, Template, Object<string, Template>): void)): DirectiveFactory),
+     * createComponent: (function(string, (function({App: App, Actions: object, HbEvent: HbEvent, State: State, Props: ComponentProps, Lifecycle: object, Refs: object}): ?object), string|object, { engines?: string|string[], disableXmlEngine?: boolean }?): ComponentFactory),
+     * getServices: (function(): Record<string, ServiceWrapper>),
+     * getComponentFactory: (function(string): ComponentFactory),
+     * addViewEngine: (function(string, function(string|object): string|object): void)
+     * }}
+     *
+     *  }
+     */
     const Habame = (function(){
 
         /** @type {Object.<string, ComponentFactory>} */
-        const $components = {};
+        const $componentFactories = {};
 
         /** @type {Object.<string, DirectiveFactory>} */
-        const $directives = {};
+        const $directiveFactories = {};
 
         /** @type {Object.<string, ServiceWrapper>} */
-        const $services = {};
+        const $serviceWrappers = {};
 
         const $apps = {};
 
@@ -5438,7 +5469,7 @@
             createComponent: function(name, controller, view, options = {}) {
                 options.engines = options.engines || $defaultViewEngine;
                 const $componentFactory = new ComponentFactory(name, controller, view, options);
-                $components[name] = $componentFactory;
+                $componentFactories[name] = $componentFactory;
                 return $componentFactory;
             },
             /**
@@ -5448,7 +5479,7 @@
              */
             createService: function(name, service, options ){
                 const serviceWrapper = new ServiceWrapper(service, options || {});
-                $services[name] = serviceWrapper;
+                $serviceWrappers[name] = serviceWrapper;
                 Object.defineProperty(Habame.Services, name, {
                     get() {
                         return serviceWrapper.create();
@@ -5456,7 +5487,7 @@
                 });
             },
             getServices: function() {
-                return $services;
+                return $serviceWrappers;
             },
             /**
              * @param {string} name
@@ -5464,11 +5495,18 @@
              * @returns {ComponentFactory}
              */
             getComponentFactory: function(name) {
-                const factory = $components[name];
+                const factory = $componentFactories[name];
                 if(!factory) {
                     throw new Error('Component ' + name + ' not found');
                 }
                 return factory;
+            },
+            /**
+             * @param {string} name
+             * @returns {boolean}
+             */
+            isComponentFactoryExists: function(name) {
+                return !$componentFactories[name];
             },
             /**
              * @param {string} name
@@ -5478,7 +5516,7 @@
              */
             createDirective: function(name, directive) {
                 const $directiveFactory = new DirectiveFactory(name, directive);
-                $directives[name] = $directiveFactory;
+                $directiveFactories[name] = $directiveFactory;
                 return $directiveFactory;
             },
             /**
@@ -5487,7 +5525,7 @@
              * @returns {DirectiveFactory}
              */
             getDirectiveFactory: function(name) {
-                const factory = $directives[name];
+                const factory = $directiveFactories[name];
                 if(!factory) {
                     throw new Error('Directive ' + name + ' not found');
                 }

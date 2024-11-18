@@ -12,17 +12,18 @@ import ComponentProps from "./ComponentProps";
  * @param {Function} $controller
  * @param {ComponentProps} $props
  * @param {App} $appInstance
+ * @param {Habame} HabameCore
  *
  * @class
  */
-const Component = function($name, $view, $controller, $props, $appInstance) {
+const Component = function($name, $view, $controller, $props, $appInstance, HabameCore) {
 
     /** @type {Object.<string, Function>} */
     const $actions = {};
 
     const $event = new HbEvent();
 
-    const $state = new State();
+    const $state = new State({}, HabameCore);
 
     const $lifecycleListeners = Lifecycle.newListenersStore();
 

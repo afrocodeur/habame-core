@@ -4,10 +4,11 @@ import ComponentProps from "src/Component/ComponentProps";
 /**
  *
  * @param {?Object.<string, *>} $defaultValues
+ * @param {Habame} HabameCore
  *
  * @class
  */
-const State = function($defaultValues = {}) {
+const State = function($defaultValues = {}, HabameCore) {
 
     /** @type {Object.<string, StateItem>} */
     const $stateItems = {};
@@ -163,11 +164,20 @@ const State = function($defaultValues = {}) {
     };
 
     /**
-     * @param {Object} serviceInstance
+     * @param {string|Object} serviceInstance
      * @param {State} serviceInstance.$serviceState
      * @param {string[] }only
+     *
+     * @returns {Object}
      */
     this.useService = function(serviceInstance, only = []) {
+        if(typeof serviceInstance === 'string') {
+            serviceInstance = HabameCore.Services[serviceInstance];
+            if(!serviceInstance) {
+                throw new Error(`Undefined service ${serviceInstance}`);
+            }
+        }
+
         const serviceState = serviceInstance.$serviceState;
         if(!serviceState || !(serviceState instanceof State)) {
             throw new Error('Invalid service provide to useService');
@@ -186,6 +196,7 @@ const State = function($defaultValues = {}) {
                 }
             });
         }
+        return serviceInstance;
     };
 
     /**

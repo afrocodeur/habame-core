@@ -13,6 +13,7 @@ const ComponentProps = function($propTemplates = {}, $slots = {}) {
 
     /**
      * @param {string} propName
+     * @returns {*}
      */
     const getPropValue = (propName) => {
         const value = $propTemplates[propName].value();
@@ -62,6 +63,8 @@ const ComponentProps = function($propTemplates = {}, $slots = {}) {
     /**
      * @param {string} name
      * @param {Function} listener
+     *
+     * @returns {{disconnect: (function(): void)}}
      */
     this.onUpdate = function(name, listener) {
         if($propTemplates[name] === undefined) {

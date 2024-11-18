@@ -58,7 +58,7 @@ const ViewElementFragmentDev = function({ $viewDescription, $fragmentElements, $
             $viewDescription.splice(0);
             $viewDescription.push(...viewDescription);
             const nodesToRemove = [];
-            $fragmentElements.forEach((element, index) => {
+            $fragmentElements.forEach((element) => {
                 element.unmount(true);
                 const isNotRemoved = differences.find((item) => {
                     return item?.node === element;
@@ -79,7 +79,7 @@ const ViewElementFragmentDev = function({ $viewDescription, $fragmentElements, $
                 if(item?.node && item.node instanceof ViewElementFragment) {
                     item.node.mount();
                     if(item.viewDescription?.if) {
-                        ifStatements = [item.viewDescription.if]
+                        ifStatements = [item.viewDescription.if];
                     }
                     else if(item.viewDescription?.elseif) {
                         ifStatements.push(item.viewDescription.elseif);

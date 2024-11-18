@@ -5,11 +5,11 @@ import ComponentFactory from "src/Component/ComponentFactory";
 
 /**
  * @param {HTMLElement} htmlNodeElement
- * @param {Habame} Habame
+ * @param {Habame} HabameCore
  *
  * @class
  */
-const App = function(htmlNodeElement, Habame) {
+const App = function(htmlNodeElement, HabameCore) {
 
     const $event = new HbEvent();
     const $state = new State();
@@ -21,7 +21,7 @@ const App = function(htmlNodeElement, Habame) {
      * @returns {Component}
      */
     const createComponentInstance = (componentFactory, props) => {
-        return componentFactory.create(props, this);
+        return componentFactory.create(props, this, HabameCore);
     };
 
     /**
@@ -31,7 +31,7 @@ const App = function(htmlNodeElement, Habame) {
      * @returns {*}
      */
     this.createDirectiveInstance = function(name, params) {
-        const directiveFactory = window.Habame.getDirectiveFactory(name);
+        const directiveFactory = HabameCore.getDirectiveFactory(name);
         return directiveFactory.create(params);
     };
 
@@ -60,7 +60,7 @@ const App = function(htmlNodeElement, Habame) {
      * @returns {?App}
      */
     this.getApp = function(name) {
-        return Habame.getApp(name);
+        return HabameCore.getApp(name);
     };
 
     /**

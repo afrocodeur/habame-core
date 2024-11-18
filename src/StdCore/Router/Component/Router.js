@@ -13,7 +13,6 @@ const RouterView = {
 
 /**
  * @param {Habame} Habame
- * @constructor
  */
 export default function Router(Habame) {
     Habame.createComponent('Router', function({ Props, State, Refs, App, Lifecycle }) {

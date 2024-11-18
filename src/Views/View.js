@@ -164,7 +164,7 @@ const View = function($viewDescription, $appInstance) {
 
     this.getAnchor = function() {
         return $viewAnchor;
-    }
+    };
 
     ViewDev.apply(this, [{
         $viewFragment,

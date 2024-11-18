@@ -41,12 +41,13 @@ const ComponentFactory = function($name, $controller, $viewDescription, $options
     /**
      * @param {ComponentProps} props
      * @param {App} appInstance
+     * @param {Habame} HabameCore
      *
      * @returns {Component}
      */
-    this.create = function(props, appInstance) {
+    this.create = function(props, appInstance, HabameCore) {
         const view = getNewView(appInstance);
-        const componentInstance = new Component($name, view, $sources.controller, props, appInstance);
+        const componentInstance = new Component($name, view, $sources.controller, props, appInstance, HabameCore);
         $instances.push({ component: componentInstance, view });
         return componentInstance;
     };
@@ -72,7 +73,7 @@ const ComponentFactory = function($name, $controller, $viewDescription, $options
         const viewDescriptionTransformed = $viewFactory.updateViewDescription(viewDescription);
         $instances.forEach(({ view }) => {
             const vue = typeof viewDescriptionTransformed === 'string' ? viewDescriptionTransformed : Helper.clone(viewDescriptionTransformed);
-            view?.updateViewDescription(viewDescriptionTransformed);
+            view?.updateViewDescription(vue);
         });
     };
 

@@ -1,6 +1,5 @@
 /**
  * @param {Habame} Habame
- * @constructor
  */
 export default function DynamicComponent(Habame) {
     Habame.createComponent('DynamicComponent', function({ State, Props, App, Lifecycle }, $view) {

@@ -1,6 +1,6 @@
 {
   "name": "habame",
-  "version": "1.0.14",
+  "version": "1.0.18",
   "description": "Il faut mettre enplace un framework assez solide pour remplacer react, vue ou encore angular",
   "main": "src/main.js",
   "scripts": {

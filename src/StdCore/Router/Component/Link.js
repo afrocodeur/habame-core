@@ -9,7 +9,6 @@ const RouterLinkView =  {
 
 /**
  * @param {Habame} Habame
- * @constructor
  */
 export default function Link(Habame) {
     Habame.createComponent('Link', function({ State, Props, Actions }) {

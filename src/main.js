@@ -7,16 +7,34 @@ import stdCore from "./StdCore/index";
 
 import HabameRouter from "./StdCore/Router/main";
 
+/**
+ * @member {{
+ * Services: {},
+ * getDirectiveFactory: (function(string): DirectiveFactory),
+ * createService: (function(string, (function(State): void), {isUniqueInstance: boolean}?): void),
+ * getApp: (function(string): *),
+ * setDefaultViewEngine: (function(string, (function(string|object): string|object)?): void),
+ * createRoot: (function((HTMLElement|string), ?string=): App),
+ * getViewEngine: (function(string): *),
+ * createDirective: (function(string, (function(HTMLElement, Template, Object<string, Template>): void)): DirectiveFactory),
+ * createComponent: (function(string, (function({App: App, Actions: object, HbEvent: HbEvent, State: State, Props: ComponentProps, Lifecycle: object, Refs: object}): ?object), string|object, { engines?: string|string[], disableXmlEngine?: boolean }?): ComponentFactory),
+ * getServices: (function(): Record<string, ServiceWrapper>),
+ * getComponentFactory: (function(string): ComponentFactory),
+ * addViewEngine: (function(string, function(string|object): string|object): void)
+ * }}
+ *
+ *  }
+ */
 const Habame = (function(){
 
     /** @type {Object.<string, ComponentFactory>} */
-    const $components = {};
+    const $componentFactories = {};
 
     /** @type {Object.<string, DirectiveFactory>} */
-    const $directives = {};
+    const $directiveFactories = {};
 
     /** @type {Object.<string, ServiceWrapper>} */
-    const $services = {};
+    const $serviceWrappers = {};
 
     const $apps = {};
 
@@ -86,7 +104,7 @@ const Habame = (function(){
         createComponent: function(name, controller, view, options = {}) {
             options.engines = options.engines || $defaultViewEngine;
             const $componentFactory = new ComponentFactory(name, controller, view, options);
-            $components[name] = $componentFactory;
+            $componentFactories[name] = $componentFactory;
             return $componentFactory;
         },
         /**
@@ -96,7 +114,7 @@ const Habame = (function(){
          */
         createService: function(name, service, options ){
             const serviceWrapper = new ServiceWrapper(service, options || {});
-            $services[name] = serviceWrapper;
+            $serviceWrappers[name] = serviceWrapper;
             Object.defineProperty(Habame.Services, name, {
                 get() {
                     return serviceWrapper.create();
@@ -104,7 +122,7 @@ const Habame = (function(){
             });
         },
         getServices: function() {
-            return $services;
+            return $serviceWrappers;
         },
         /**
          * @param {string} name
@@ -112,11 +130,18 @@ const Habame = (function(){
          * @returns {ComponentFactory}
          */
         getComponentFactory: function(name) {
-            const factory = $components[name];
+            const factory = $componentFactories[name];
             if(!factory) {
                 throw new Error('Component ' + name + ' not found');
             }
             return factory;
+        },
+        /**
+         * @param {string} name
+         * @returns {boolean}
+         */
+        isComponentFactoryExists: function(name) {
+            return !!$componentFactories[name];
         },
         /**
          * @param {string} name
@@ -126,7 +151,7 @@ const Habame = (function(){
          */
         createDirective: function(name, directive) {
             const $directiveFactory = new DirectiveFactory(name, directive);
-            $directives[name] = $directiveFactory;
+            $directiveFactories[name] = $directiveFactory;
             return $directiveFactory;
         },
         /**
@@ -135,7 +160,7 @@ const Habame = (function(){
          * @returns {DirectiveFactory}
          */
         getDirectiveFactory: function(name) {
-            const factory = $directives[name];
+            const factory = $directiveFactories[name];
             if(!factory) {
                 throw new Error('Directive ' + name + ' not found');
             }
