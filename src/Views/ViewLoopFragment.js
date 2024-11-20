@@ -73,6 +73,7 @@ const ViewLoopFragment = function($viewDescription, $viewProps) {
             if(existingNode.data !== stateData[$itemValueName]) {
                 existingNode.localState.set(stateData);
             }
+            existingNode.localState.refreshProps();
             existingNode.node.restoreRef();
             return;
         }

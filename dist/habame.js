@@ -242,7 +242,7 @@
     const StateItem = function($stateName, $defaultValue, $parentState) {
 
         const $stateValue = {
-            default: $defaultValue,
+            default: (typeof $defaultValue === 'object' ? JSON.parse(JSON.stringify($defaultValue)) : $defaultValue),
             current: null,
             last: $defaultValue
         };
@@ -525,7 +525,7 @@
             observer: null,
             listenersToHandle: new Set()
         };
-        const $propsUsed = { props: null, callbacks: {} };
+        const $propsUsed = { props: null, only: null, callbacks: {} };
 
         /**
          * @param {string[]} stateNames
@@ -560,7 +560,9 @@
          */
         this.add = function(stateName, stateValue) {
             if($stateItems[stateName]) {
-                return $stateItems[stateName];
+                const exitingStateItem = $stateItems[stateName];
+                exitingStateItem.set(stateValue);
+                return exitingStateItem;
             }
             const stateItem = new StateItem(stateName, stateValue, this);
 
@@ -611,6 +613,10 @@
             }
         };
 
+        this.refreshProps = function() {
+            $propsUsed.props && this.useProps($propsUsed.props, $propsUsed.only);
+        };
+
         /**
          * Connect the component state to its props
          *
@@ -622,6 +628,7 @@
                 throw new Error('State.useProps require a ComponentProps instance');
             }
             $propsUsed.props = props;
+            $propsUsed.only = only;
             const propsValues = props.all();
             for (const propName in propsValues) {
                 if(Array.isArray(only) && !only.includes(propName)) {
@@ -633,7 +640,7 @@
                 const stateItem = this.add(propName, propsValues[propName]);
                 $propsUsed.callbacks[propName] = props.onUpdate(propName, (value, oldValue) => {
                     stateItem.set(value);
-                    if(value === oldValue) {
+                    if(value[IS_PROXY_PROPERTY] || value === oldValue) {
                         stateItem.trigger();
                     }
                 });
@@ -3221,6 +3228,7 @@
                 if(existingNode.data !== stateData[$itemValueName]) {
                     existingNode.localState.set(stateData);
                 }
+                existingNode.localState.refreshProps();
                 existingNode.node.restoreRef();
                 return;
             }
@@ -4161,19 +4169,32 @@
                 $componentRequirements.Actions[key] = undefined;
             }
             controller($componentRequirements);
+            $componentRequirements.State.useProps($componentRequirements.Props);
+            const statesToKeep = {};
             for(const oldStateName in stateValues) {
                 if($state.exists(oldStateName)) {
-                    const value = $state.get(oldStateName).value();
+                    const stateItem = $state.get(oldStateName);
+                    const value = stateItem.value();
                     const oldValue = stateValues[oldStateName];
                     if(typeof value !== typeof oldValue) {
                         continue;
                     }
-                    if(Array.isArray(oldValue)) {
+                    if(typeof oldValue === 'object') {
+                        try {
+                            if(JSON.stringify(stateItem.getInitialValue()) !== JSON.stringify(value)) {
+                                continue;
+                            }
+                        } catch (e) {
+                            continue;
+                        }
+                    }
+                    else if(stateItem.getInitialValue() !== value) {
                         continue;
                     }
-                    $state.set({ [oldStateName]: stateValues[oldStateName] });
+                    statesToKeep[oldStateName] = oldValue[IS_PROXY_PROPERTY] ? oldValue.toObject() : oldValue;
                 }
             }
+            $state.set(statesToKeep);
             this.handleListeners();
         };
 
@@ -5506,7 +5527,7 @@
              * @returns {boolean}
              */
             isComponentFactoryExists: function(name) {
-                return !$componentFactories[name];
+                return !!$componentFactories[name];
             },
             /**
              * @param {string} name

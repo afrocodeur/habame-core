@@ -1,5 +1,6 @@
 import StateItem from "src/State/StateItem";
 import ComponentProps from "src/Component/ComponentProps";
+import {IS_PROXY_PROPERTY} from "src/constantes";
 
 /**
  *
@@ -25,7 +26,7 @@ const State = function($defaultValues = {}, HabameCore) {
         observer: null,
         listenersToHandle: new Set()
     };
-    const $propsUsed = { props: null, callbacks: {} };
+    const $propsUsed = { props: null, only: null, callbacks: {} };
 
     let $lock = false;
 
@@ -66,7 +67,9 @@ const State = function($defaultValues = {}, HabameCore) {
             // console.warn("It's not recommended to add a state after initialisation");
         }
         if($stateItems[stateName]) {
-            return $stateItems[stateName];
+            const exitingStateItem = $stateItems[stateName];
+            exitingStateItem.set(stateValue);
+            return exitingStateItem;
         }
         const stateItem = new StateItem(stateName, stateValue, this);
 
@@ -117,6 +120,10 @@ const State = function($defaultValues = {}, HabameCore) {
         }
     };
 
+    this.refreshProps = function() {
+        $propsUsed.props && this.useProps($propsUsed.props, $propsUsed.only);
+    };
+
     /**
      * Connect the component state to its props
      *
@@ -128,6 +135,7 @@ const State = function($defaultValues = {}, HabameCore) {
             throw new Error('State.useProps require a ComponentProps instance');
         }
         $propsUsed.props = props;
+        $propsUsed.only = only;
         const propsValues = props.all();
         for (const propName in propsValues) {
             if(Array.isArray(only) && !only.includes(propName)) {
@@ -139,7 +147,7 @@ const State = function($defaultValues = {}, HabameCore) {
             const stateItem = this.add(propName, propsValues[propName]);
             $propsUsed.callbacks[propName] = props.onUpdate(propName, (value, oldValue) => {
                 stateItem.set(value);
-                if(value === oldValue) {
+                if(value[IS_PROXY_PROPERTY] || value === oldValue) {
                     stateItem.trigger();
                 }
             });

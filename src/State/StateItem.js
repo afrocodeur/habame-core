@@ -12,7 +12,7 @@ import {IS_PROXY_PROPERTY, PROXY_TARGET_LABEL} from "../constantes";
 const StateItem = function($stateName, $defaultValue, $parentState) {
 
     const $stateValue = {
-        default: $defaultValue,
+        default: (typeof $defaultValue === 'object' ? JSON.parse(JSON.stringify($defaultValue)) : $defaultValue),
         current: null,
         last: $defaultValue
     };

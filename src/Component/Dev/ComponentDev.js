@@ -1,3 +1,4 @@
+import {IS_PROXY_PROPERTY} from "../../constantes";
 
 
 const ComponentDev = function({ $lifecycle, $event, $componentRequirements , $state }) {
@@ -15,19 +16,32 @@ const ComponentDev = function({ $lifecycle, $event, $componentRequirements , $st
             $componentRequirements.Actions[key] = undefined;
         }
         controller($componentRequirements);
+        $componentRequirements.State.useProps($componentRequirements.Props);
+        const statesToKeep = {};
         for(const oldStateName in stateValues) {
             if($state.exists(oldStateName)) {
-                const value = $state.get(oldStateName).value();
+                const stateItem = $state.get(oldStateName);
+                const value = stateItem.value();
                 const oldValue = stateValues[oldStateName];
                 if(typeof value !== typeof oldValue) {
                     continue;
                 }
-                if(Array.isArray(oldValue)) {
+                if(typeof oldValue === 'object') {
+                    try {
+                        if(JSON.stringify(stateItem.getInitialValue()) !== JSON.stringify(value)) {
+                            continue;
+                        }
+                    } catch (e) {
+                        continue;
+                    }
+                }
+                else if(stateItem.getInitialValue() !== value) {
                     continue;
                 }
-                $state.set({ [oldStateName]: stateValues[oldStateName] });
+                statesToKeep[oldStateName] = oldValue[IS_PROXY_PROPERTY] ? oldValue.toObject() : oldValue;
             }
         }
+        $state.set(statesToKeep);
         this.handleListeners();
     };
 
