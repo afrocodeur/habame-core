@@ -2,6 +2,8 @@ import alias from '@rollup/plugin-alias';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import terser from '@rollup/plugin-terser';
+import resolve from '@rollup/plugin-node-resolve';
+import babel from '@rollup/plugin-babel';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,10 +15,11 @@ let output = [
         file: 'dist/habame.js',
         format: 'umd',
         name: "Habame",
+
     },
     {
         file: 'dist/habame.min.js',
-        format: 'iife',
+        format: 'umd',
         name: "Habame",
         plugins: [terser()]
     }
@@ -45,6 +48,11 @@ export default {
                 { find: 'src', replacement: path.resolve(projectRootDir, 'src') },
                 { find: 'StdCore', replacement: path.resolve(projectRootDir, 'src/StdCore') },
             ]
-        })
+        }),
+        babel({
+            babelHelpers: 'bundled',
+            exclude: []
+        }),
+        resolve(),
     ]
 };

@@ -1,6 +1,6 @@
 {
   "name": "habame",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "description": "Il faut mettre enplace un framework assez solide pour remplacer react, vue ou encore angular",
   "main": "src/main.js",
   "scripts": {
@@ -19,5 +19,10 @@
     "eslint": "^8.55.0",
     "eslint-plugin-jsdoc": "^46.9.1",
     "rollup": "^4.3.0"
+  },
+  "dependencies": {
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-node-resolve": "^15.3.0",
+    "habame-chimera-engine": "^1.0.0"
   }
 }

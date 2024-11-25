@@ -1,6 +1,7 @@
 import View from "src/Views/View";
-import xmlEngine from "../Engines/xmlEngine";
-import Helper from "../Helpers/Helper";
+import xmlEngine from "src/Engines/xmlEngine";
+import Helper from "src/Helpers/Helper";
+import chimeraEngine from "habame-chimera-engine";
 
 /**
  *
@@ -33,7 +34,8 @@ const ViewFactory =  function($viewDescription, $appInstance, $options) {
         }
 
         if(typeof view === 'string') {
-            view = xmlEngine(view);
+            console.log(chimeraEngine);
+            view = xmlEngine(chimeraEngine(view));
         }
         return view;
     };

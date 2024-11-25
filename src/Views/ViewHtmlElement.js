@@ -231,7 +231,7 @@ const ViewHtmlElement = function($viewDescription, $viewProps) {
             return;
         }
         $viewAnchor.remove();
-        $htmlNode.remove();
+        ($htmlNode && $htmlNode.remove) && $htmlNode.remove();
         if($children) {
             $children.remove();
         }

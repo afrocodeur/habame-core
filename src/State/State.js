@@ -240,11 +240,14 @@ const State = function($defaultValues = {}, HabameCore) {
      * @param {Function|AsyncFunction} callbabk
      */
     this.edit = async function(names, callbabk) {
-        if(typeof callbabk === 'function') {
-            if(callbabk.constructor.name === 'AsyncFunction') {
-                await callbabk();
-            }
-            callbabk && callbabk();
+        if(typeof callbabk !== 'function') {
+            return;
+        }
+        if(callbabk.constructor.name === 'AsyncFunction') {
+            await callbabk();
+        }
+        else {
+            callbabk();
         }
         triggerStateItems(names);
     };

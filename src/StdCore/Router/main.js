@@ -13,7 +13,7 @@ const HabameRouter = function(Habame) {
     return {
 
         /**
-         * @param {string} name
+         * @param {string?} name
          * @param {{ history?: Object, browserHistory?: boolean }} options
          *
          * @returns {Router}
@@ -34,7 +34,7 @@ const HabameRouter = function(Habame) {
                 history = options.history;
             }
 
-            Habame.createService(DEFAULT_ROUTER_NAME, RouterService, { params: [router, history] });
+            Habame.createService(name, RouterService, { params: [router, history] });
             $routers[name] = router;
             return router;
         },
