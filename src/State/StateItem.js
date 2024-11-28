@@ -115,7 +115,8 @@ const StateItem = function($stateName, $defaultValue, $parentState) {
      * @param {Function} callback
      */
     this.watch = function(path, callback) {
-        $watchListeners[path] = callback;
+        $watchListeners[path] = $watchListeners[path] ?? [];
+        $watchListeners[path].push(callback);
     };
 
     this.trigger = function() {

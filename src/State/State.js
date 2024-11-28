@@ -197,10 +197,14 @@ const State = function($defaultValues = {}, HabameCore) {
             }
             const sourceState = serviceState.get(stateName);
             const stateItem = this.add(stateName, sourceState.value());
-            sourceState.onUpdate((value, oldValue) => {
-                stateItem.set(value);
-                if(value === oldValue) {
-                    stateItem.trigger();
+            sourceState.onUpdate((value) => {
+                if(value !== stateItem.value()) {
+                    stateItem.set(value);
+                }
+            });
+            stateItem.onUpdate(function(value) {
+                if(value !== sourceState.value()) {
+                    sourceState.set(value);
                 }
             });
         }

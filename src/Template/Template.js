@@ -69,8 +69,26 @@ const Template = function($template, $viewProps, $isWithTry = false, $catchValue
         return listener;
     };
 
+    /**
+     * @returns {string[]}
+     */
     this.statesToWatch = function() {
         return requestedVariablesNames;
+    };
+
+    /**
+     * @returns {null|StateItem}
+     */
+    this.getFirstState = function() {
+        const firstStateName = requestedVariablesNames[0];
+        return $viewProps.getState(firstStateName);
+    };
+
+    /**
+     * @returns {string}
+     */
+    this.getExpression = function() {
+        return $template;
     };
 
     /**

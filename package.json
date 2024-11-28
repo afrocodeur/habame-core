@@ -23,6 +23,6 @@
   "dependencies": {
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-node-resolve": "^15.3.0",
-    "habame-chimera-engine": "^1.0.0"
+    "habame-chimera-engine": "^1.0.3"
   }
 }

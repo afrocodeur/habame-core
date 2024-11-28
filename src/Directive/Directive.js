@@ -27,7 +27,12 @@ const Directive = function($node, $directives, $attributeTemplates, $viewProps, 
     ((function() {
         for(const directiveName in $directives) {
             const attrValue = new Template($directives[directiveName], $viewProps);
-            const directive = $viewProps.appInstance.createDirectiveInstance(directiveName, [{ element: $node, attribute: attrValue, attrs: $attributeTemplates }]);
+            const directive = $viewProps.appInstance.createDirectiveInstance(directiveName, [{
+                target: $node,
+                attribute: attrValue,
+                state: attrValue.getFirstState(),
+                attrs: $attributeTemplates
+            }]);
 
             for(const key in directive) {
                 if($lifecycleListeners[key] === undefined) {

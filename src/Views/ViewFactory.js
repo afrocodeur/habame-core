@@ -34,7 +34,6 @@ const ViewFactory =  function($viewDescription, $appInstance, $options) {
         }
 
         if(typeof view === 'string') {
-            console.log(chimeraEngine);
             view = xmlEngine(chimeraEngine(view));
         }
         return view;
